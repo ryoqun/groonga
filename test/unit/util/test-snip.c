@@ -428,6 +428,49 @@ test_exec_with_invalid_argument(void)
 }
 
 void
+test_exec_with_normalize(void)
+{
+  unsigned int n_results;
+  unsigned int max_tagged_len;
+  unsigned int result_len;
+  const gchar keyword[] = "転置インデックス";
+
+  default_encoding = GRN_ENC_UTF8;
+
+  cut_assert_open_snip();
+  grn_test_assert(grn_snip_add_cond(&context, snip, keyword, strlen(keyword),
+                                    NULL, 0, NULL, 0));
+
+  grn_test_assert(grn_snip_exec(&context, snip,
+                                text_ja_utf8, strlen(text_ja_utf8),
+                                &n_results, &max_tagged_len));
+  cut_assert_equal_uint(0, n_results);
+
+  grn_snip_close(&context, snip);
+  snip = NULL;
+
+
+  default_flags = GRN_SNIP_NORMALIZE;
+
+  cut_assert_open_snip();
+  grn_test_assert(grn_snip_add_cond(&context, snip, keyword, strlen(keyword),
+                                    NULL, 0, NULL, 0));
+
+  grn_test_assert(grn_snip_exec(&context, snip,
+                                text_ja_utf8, strlen(text_ja_utf8),
+                                &n_results, &max_tagged_len));
+  cut_assert_equal_uint(1, n_results);
+  cut_assert_equal_uint(105, max_tagged_len);
+  result = g_new(gchar, max_tagged_len);
+
+  grn_test_assert(grn_snip_get_result(&context, snip, 0, result, &result_len));
+  cut_assert_equal_string("備えた、高速かつ高精度な[[転置\n"
+                          "インデックス]]タイプのエンジンです。コン",
+                          result);
+  cut_assert_equal_uint(104, result_len);
+}
+
+void
 data_tag_insertion(void)
 {
 #define ADD_DATUM(label, text, keyword, flags, expected) \
