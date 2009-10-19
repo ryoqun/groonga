@@ -484,15 +484,15 @@ data_tag_insertion(void)
   ADD_DATUM("skip_spaces",
             GRN_SNIP_SKIP_LEADING_SPACES);
   ADD_DATUM("copy_tag and skip_spaces",
-            GRN_SNIP_COPY_TAG & GRN_SNIP_SKIP_LEADING_SPACES);
+            GRN_SNIP_COPY_TAG | GRN_SNIP_SKIP_LEADING_SPACES);
   ADD_DATUM("normalize",
             GRN_SNIP_NORMALIZE);
   ADD_DATUM("normalize and copy_tag",
-            GRN_SNIP_NORMALIZE & GRN_SNIP_COPY_TAG);
+            GRN_SNIP_NORMALIZE | GRN_SNIP_COPY_TAG);
   ADD_DATUM("normalize and skip_spaces",
-            GRN_SNIP_NORMALIZE & GRN_SNIP_SKIP_LEADING_SPACES);
+            GRN_SNIP_NORMALIZE | GRN_SNIP_SKIP_LEADING_SPACES);
   ADD_DATUM("normalize, copy_tag and skip_spaces",
-            GRN_SNIP_NORMALIZE & GRN_SNIP_COPY_TAG & GRN_SNIP_SKIP_LEADING_SPACES);
+            GRN_SNIP_NORMALIZE | GRN_SNIP_COPY_TAG | GRN_SNIP_SKIP_LEADING_SPACES);
 #undef ADD_DATUM
 }
 
