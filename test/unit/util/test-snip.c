@@ -473,36 +473,26 @@ test_exec_with_normalize(void)
 void
 data_tag_insertion(void)
 {
-#define ADD_DATUM(label, text, keyword, flags, expected) \
-  gcut_add_datum(label,                                  \
-                 "text", G_TYPE_STRING, (text),          \
-                 "keyword", G_TYPE_STRING, (keyword),    \
-                 "flags", G_TYPE_INT, (flags),           \
-                 "expected", G_TYPE_STRING, (expected),  \
+#define ADD_DATUM(label, flags)                \
+  gcut_add_datum(label,                        \
+                 "flags", G_TYPE_INT, (flags), \
                  NULL)
-  const gchar en_expected[] =
-    "Groonga is an [[embeddable]] fulltext search engine, which you can use in\n"
-    "conjunction with various scrip";
-  const gchar bogus_en_expected[] = 
-    "Groonga is an[[ embeddable]] fulltext search engine, which you can use in\n"
-    "conjunction with various scrip";
-  const gchar keyword[] = "embeddable";
-  ADD_DATUM("without normalize", text, keyword,
-            0, en_expected);
-  ADD_DATUM("with normalize", text, keyword,
-            GRN_SNIP_NORMALIZE, bogus_en_expected);
-  ADD_DATUM("with normalize and copy_tag", text, keyword,
-            GRN_SNIP_COPY_TAG & GRN_SNIP_NORMALIZE, en_expected);
-  ADD_DATUM("with normalize and skip_spaces", text, keyword,
-            GRN_SNIP_SKIP_LEADING_SPACES & GRN_SNIP_NORMALIZE, en_expected);
-  ADD_DATUM("with copy_tag", text, keyword, GRN_SNIP_COPY_TAG, en_expected);
-  ADD_DATUM("with skip_spaces", text, keyword,
-            GRN_SNIP_SKIP_LEADING_SPACES, en_expected);
-  ADD_DATUM("with copy_tag and skip_spaces", text, keyword,
-            GRN_SNIP_COPY_TAG & GRN_SNIP_SKIP_LEADING_SPACES, en_expected);
-  ADD_DATUM("with normalize copy_tag and skip_spaces", text, keyword,
-            GRN_SNIP_COPY_TAG & GRN_SNIP_SKIP_LEADING_SPACES & GRN_SNIP_NORMALIZE,
-            en_expected);
+  ADD_DATUM("no flags", 
+            0);
+  ADD_DATUM("copy_tag",
+            GRN_SNIP_COPY_TAG);
+  ADD_DATUM("skip_spaces",
+            GRN_SNIP_SKIP_LEADING_SPACES);
+  ADD_DATUM("copy_tag and skip_spaces",
+            GRN_SNIP_COPY_TAG & GRN_SNIP_SKIP_LEADING_SPACES);
+  ADD_DATUM("normalize",
+            GRN_SNIP_NORMALIZE);
+  ADD_DATUM("normalize and copy_tag",
+            GRN_SNIP_NORMALIZE & GRN_SNIP_COPY_TAG);
+  ADD_DATUM("normalize and skip_spaces",
+            GRN_SNIP_NORMALIZE & GRN_SNIP_SKIP_LEADING_SPACES);
+  ADD_DATUM("normalize, copy_tag and skip_spaces",
+            GRN_SNIP_NORMALIZE & GRN_SNIP_COPY_TAG & GRN_SNIP_SKIP_LEADING_SPACES);
 #undef ADD_DATUM
 }
 
@@ -511,18 +501,18 @@ test_tag_insertion(gconstpointer data)
 {
   unsigned int n_results;
   unsigned int max_tagged_len;
-  const gchar *text, *keyword, *expected;
+  const gchar keyword[] = "embeddable";
+  const gchar expected[] =
+    "Groonga is an [[embeddable]] fulltext search engine, which you can use in\n"
+    "conjunction with various scrip";
   gchar *result;
   unsigned int text_len, keyword_len, result_len, expected_len;
 
   default_encoding = GRN_ENC_UTF8;
   default_flags = gcut_data_get_int(data, "flags");
 
-  text = gcut_data_get_string(data, "text");
   text_len = strlen(text);
-  keyword = gcut_data_get_string(data, "keyword");
   keyword_len = strlen(keyword);
-  expected = gcut_data_get_string(data, "expected");
   expected_len = strlen(expected);
 
   cut_assert_open_snip();
