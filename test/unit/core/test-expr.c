@@ -24,7 +24,8 @@
 #include "../lib/grn-assertions.h"
 
 #define PARSE(expr,str,level) \
-  grn_expr_parse(&context, (expr), (str), strlen(str), body, GRN_OP_MATCH, GRN_OP_AND, level)
+  grn_test_assert(grn_expr_parse(&context, (expr), (str), strlen(str), \
+                                 body, GRN_OP_MATCH, GRN_OP_AND, level))
 
 static void grn_assert_expr(gchar *inspected, grn_obj *expr);
 
