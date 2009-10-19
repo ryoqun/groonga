@@ -28,6 +28,8 @@ void test_simple_exec_euc_jp(void);
 void test_simple_exec_sjis(void);
 void test_simple_exec_utf8(void);
 void test_exec_with_invalid_argument(void);
+void data_tag_insertion(void);
+void test_tag_insertion(gconstpointer data);
 void test_exec_with_normalize(void);
 void test_exec_with_many_results(void);
 void test_customized_tag(void);
@@ -426,46 +428,73 @@ test_exec_with_invalid_argument(void)
 }
 
 void
-test_exec_with_normalize(void)
+data_tag_insertion(void)
+{
+#define ADD_DATUM(label, text, keyword, flags, expected) \
+  gcut_add_datum(label,                                  \
+                 "text", G_TYPE_STRING, (text),          \
+                 "keyword", G_TYPE_STRING, (keyword),    \
+                 "flags", G_TYPE_INT, (flags),           \
+                 "expected", G_TYPE_STRING, (expected),  \
+                 NULL)
+  const gchar en_expected[] =
+    "Groonga is an [[embeddable]] fulltext search engine, which you can use in\n"
+    "conjunction with various scrip";
+  const gchar bogus_en_expected[] = 
+    "Groonga is an[[ embeddable]] fulltext search engine, which you can use in\n"
+    "conjunction with various scrip";
+  const gchar keyword[] = "embeddable";
+  ADD_DATUM("without normalize", text, keyword,
+            0, en_expected);
+  ADD_DATUM("with normalize", text, keyword,
+            GRN_SNIP_NORMALIZE, bogus_en_expected);
+  ADD_DATUM("with normalize and copy_tag", text, keyword,
+            GRN_SNIP_COPY_TAG & GRN_SNIP_NORMALIZE, en_expected);
+  ADD_DATUM("with normalize and skip_spaces", text, keyword,
+            GRN_SNIP_SKIP_LEADING_SPACES & GRN_SNIP_NORMALIZE, en_expected);
+  ADD_DATUM("with copy_tag", text, keyword, GRN_SNIP_COPY_TAG, en_expected);
+  ADD_DATUM("with skip_spaces", text, keyword,
+            GRN_SNIP_SKIP_LEADING_SPACES, en_expected);
+  ADD_DATUM("with copy_tag and skip_spaces", text, keyword,
+            GRN_SNIP_COPY_TAG & GRN_SNIP_SKIP_LEADING_SPACES, en_expected);
+  ADD_DATUM("with normalize copy_tag and skip_spaces", text, keyword,
+            GRN_SNIP_COPY_TAG & GRN_SNIP_SKIP_LEADING_SPACES & GRN_SNIP_NORMALIZE,
+            en_expected);
+#undef ADD_DATUM
+}
+
+void
+test_tag_insertion(gconstpointer data)
 {
   unsigned int n_results;
   unsigned int max_tagged_len;
-  unsigned int result_len;
-  const gchar keyword[] = "転置インデックス";
+  const gchar *text, *keyword, *expected;
+  gchar *result;
+  unsigned int text_len, keyword_len, result_len, expected_len;
 
   default_encoding = GRN_ENC_UTF8;
+  default_flags = gcut_data_get_int(data, "flags");
+
+  text = gcut_data_get_string(data, "text");
+  text_len = strlen(text);
+  keyword = gcut_data_get_string(data, "keyword");
+  keyword_len = strlen(keyword);
+  expected = gcut_data_get_string(data, "expected");
+  expected_len = strlen(expected);
 
   cut_assert_open_snip();
-  grn_test_assert(grn_snip_add_cond(&context, snip, keyword, strlen(keyword),
+  grn_test_assert(grn_snip_add_cond(&context, snip, keyword, keyword_len,
                                     NULL, 0, NULL, 0));
 
-  grn_test_assert(grn_snip_exec(&context, snip,
-                                text_ja_utf8, strlen(text_ja_utf8),
-                                &n_results, &max_tagged_len));
-  cut_assert_equal_uint(0, n_results);
-
-  grn_snip_close(&context, snip);
-  snip = NULL;
-
-
-  default_flags = GRN_SNIP_NORMALIZE;
-
-  cut_assert_open_snip();
-  grn_test_assert(grn_snip_add_cond(&context, snip, keyword, strlen(keyword),
-                                    NULL, 0, NULL, 0));
-
-  grn_test_assert(grn_snip_exec(&context, snip,
-                                text_ja_utf8, strlen(text_ja_utf8),
-                                &n_results, &max_tagged_len));
+  grn_test_assert(grn_snip_exec(&context, snip, text, text_len, &n_results,
+                                &max_tagged_len));
   cut_assert_equal_uint(1, n_results);
-  cut_assert_equal_uint(105, max_tagged_len);
+  cut_assert_equal_uint(expected_len + 1, max_tagged_len);
   result = g_new(gchar, max_tagged_len);
 
   grn_test_assert(grn_snip_get_result(&context, snip, 0, result, &result_len));
-  cut_assert_equal_string("備えた、高速かつ高精度な[[転置\n"
-                          "インデックス]]タイプのエンジンです。コン",
-                          result);
-  cut_assert_equal_uint(104, result_len);
+  cut_assert_equal_string(expected, result);
+  cut_assert_equal_uint(expected_len, result_len);
 }
 
 void
