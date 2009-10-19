@@ -28,8 +28,9 @@ void test_simple_exec_euc_jp(void);
 void test_simple_exec_sjis(void);
 void test_simple_exec_utf8(void);
 void test_exec_with_invalid_argument(void);
-void data_exec_with_normalize(void);
-void test_exec_with_normalize(gconstpointer data);
+void data_tag_insertion(void);
+void test_tag_insertion(gconstpointer data);
+void test_exec_with_normalize(void);
 void test_exec_with_many_results(void);
 void test_customized_tag(void);
 void test_multi_conditions(void);
@@ -427,7 +428,7 @@ test_exec_with_invalid_argument(void)
 }
 
 void
-data_exec_with_normalize(void)
+data_tag_insertion(void)
 {
 #define ADD_DATUM(label, text, keyword, flags, expected)  \
   gcut_add_datum(label,                                                      \
@@ -437,16 +438,24 @@ data_exec_with_normalize(void)
                  "expected", G_TYPE_STRING, (expected), \
                  NULL)
   const gchar en_result[] = "Groonga is an [[embeddable]] fulltext search engine, which you can use in\nconjunction with various scrip";
+  const gchar bogus_en_result[] = "Groonga is an[[ embeddable]] fulltext search engine, which you can use in\nconjunction with various scrip";
   //const gchar ja_result[] = "Groongaは[[組み込み型]]の全文検索エンジンです。DBMSやスクリプト言語処理系";
   //ADD_DATUM("vanila copy", text_ja_utf8, "組み込み型", GRN_SNIP_COPY_TAG & GRN_SNIP_NORMALIZE, ja_result);
-  ADD_DATUM("without normalize", text, "embeddable", GRN_SNIP_NORMALIZE, en_result);
+  const gchar keyword[] = "embeddable";
+  ADD_DATUM("without normalize", text, keyword, 0, en_result);
+  ADD_DATUM("with normalize", text, keyword, GRN_SNIP_NORMALIZE, bogus_en_result);
+  ADD_DATUM("with normalize and copy_tag", text, keyword, GRN_SNIP_COPY_TAG & GRN_SNIP_NORMALIZE, en_result);
+  ADD_DATUM("with normalize and skip_spaces", text, keyword, GRN_SNIP_SKIP_LEADING_SPACES & GRN_SNIP_NORMALIZE, en_result);
+  ADD_DATUM("with copy_tag", text, keyword, GRN_SNIP_COPY_TAG, en_result);
+  ADD_DATUM("with skip_spaces", text, keyword, GRN_SNIP_SKIP_LEADING_SPACES, en_result);
+  ADD_DATUM("with normalize copy_tag and skip_spaces", text, keyword, GRN_SNIP_COPY_TAG & GRN_SNIP_SKIP_LEADING_SPACES & GRN_SNIP_NORMALIZE, en_result);
+  ADD_DATUM("with copy_tag and skip_spaces", text, keyword, GRN_SNIP_COPY_TAG & GRN_SNIP_SKIP_LEADING_SPACES, en_result);
   //ADD_DATUM("vanila", text_ja_utf8, "組み込み型", 0, ja_result);
-  ADD_DATUM("with normalize", text, "embeddable", 0, en_result);
 #undef ADD_DATUM
 }
 
 void
-test_exec_with_normalize(gconstpointer data)
+test_tag_insertion(gconstpointer data)
 {
   unsigned int n_results;
   unsigned int max_tagged_len;

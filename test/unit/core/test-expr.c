@@ -1245,7 +1245,7 @@ test_expr_snip(void)
 
   {
     grn_snip *snip;
-    int flags = /*GRN_SNIP_COPY_TAG &*/ GRN_SNIP_NORMALIZE;//GRN_SNIP_SKIP_LEADING_SPACES;// & GRN_SNIP_NORMALIZE;//0;GRN_SNIP_NORMALIZE;
+    int flags = 0;
     unsigned int width, max_results;
     const char *open_tags[] = {"[[", "<"};
     const char *close_tags[] = {"]]", ">"};
