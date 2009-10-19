@@ -28,7 +28,8 @@ void test_simple_exec_euc_jp(void);
 void test_simple_exec_sjis(void);
 void test_simple_exec_utf8(void);
 void test_exec_with_invalid_argument(void);
-void test_exec_with_normalize(void);
+void data_exec_with_normalize(void);
+void test_exec_with_normalize(gconstpointer data);
 void test_exec_with_many_results(void);
 void test_customized_tag(void);
 void test_multi_conditions(void);
@@ -66,8 +67,8 @@ static const gchar text[] =
 static const gchar text_ja_utf8[] =
   "Groongaは組み込み型の全文検索エンジンです。DBMSやスクリプト言語処理系等に\n"
   "組み込むことによって、その全文検索機能を強化することができます。n-gram\n"
-  "インデックスと単語インデックスの特徴を兼ね備えた、高速かつ高精度な転置\n"
-  "インデックスタイプのエンジンです。コンパクトな実装ですが、大規模な文書\n"
+  "インデックスと単語インデックスの特徴を兼ね備えた、高速かつ高精度な    転置\n"
+  "インデックス    タイプのエンジンです。コンパクトな実装ですが、大規模な文書\n"
   "量と検索要求を処理できるように設計されています。また、純粋なn-gramイン\n"
   "デックスの作成も可能です。";
 static gchar *text_ja_euc;
@@ -426,46 +427,70 @@ test_exec_with_invalid_argument(void)
 }
 
 void
-test_exec_with_normalize(void)
+data_exec_with_normalize(void)
+{
+#define ADD_DATUM(label, text, keyword, flags, expected)  \
+  gcut_add_datum(label,                                                      \
+                 "text", G_TYPE_STRING, (text),                               \
+                 "keyword", G_TYPE_STRING, (keyword),                                 \
+                 "flags", G_TYPE_INT, (flags),                                              \
+                 "expected", G_TYPE_STRING, (expected), \
+                 NULL)
+  const gchar en_result[] = "Groonga is an [[embeddable]] fulltext search engine, which you can use in\nconjunction with various scrip";
+  //const gchar ja_result[] = "Groongaは[[組み込み型]]の全文検索エンジンです。DBMSやスクリプト言語処理系";
+  //ADD_DATUM("vanila copy", text_ja_utf8, "組み込み型", GRN_SNIP_COPY_TAG & GRN_SNIP_NORMALIZE, ja_result);
+  ADD_DATUM("without normalize", text, "embeddable", GRN_SNIP_NORMALIZE, en_result);
+  //ADD_DATUM("vanila", text_ja_utf8, "組み込み型", 0, ja_result);
+  ADD_DATUM("with normalize", text, "embeddable", 0, en_result);
+#undef ADD_DATUM
+}
+
+void
+test_exec_with_normalize(gconstpointer data)
 {
   unsigned int n_results;
   unsigned int max_tagged_len;
-  unsigned int result_len;
-  const gchar keyword[] = "転置インデックス";
+  const gchar *text, *keyword, *expected;
+  gchar *result;
+  unsigned int text_len, keyword_len, result_len, expected_len;
+  text = gcut_data_get_string(data, "text");
+  text_len = strlen(text);
+  keyword = gcut_data_get_string(data, "keyword");
+  keyword_len = strlen(keyword);
+  expected = gcut_data_get_string(data, "expected");
+  expected_len = strlen(expected);
 
   default_encoding = GRN_ENC_UTF8;
 
-  cut_assert_open_snip();
-  grn_test_assert(grn_snip_add_cond(&context, snip, keyword, strlen(keyword),
-                                    NULL, 0, NULL, 0));
+  //cut_assert_open_snip();
+  //grn_test_assert(grn_snip_add_cond(&context, snip, keyword, keyword_len,
+   //                                 NULL, 0, NULL, 0));
 
-  grn_test_assert(grn_snip_exec(&context, snip,
-                                text_ja_utf8, strlen(text_ja_utf8),
-                                &n_results, &max_tagged_len));
-  cut_assert_equal_uint(0, n_results);
+  //grn_test_assert(grn_snip_exec(&context, snip,
+  //                              text, text_len,
+  //                              &n_results, &max_tagged_len));
+  //cut_assert_equal_uint(0, n_results);
 
-  grn_snip_close(&context, snip);
+  //grn_snip_close(&context, snip);
   snip = NULL;
 
 
-  default_flags = GRN_SNIP_NORMALIZE;
+  default_flags = gcut_data_get_int(data, "flags");
 
   cut_assert_open_snip();
-  grn_test_assert(grn_snip_add_cond(&context, snip, keyword, strlen(keyword),
+  grn_test_assert(grn_snip_add_cond(&context, snip, keyword, keyword_len,
                                     NULL, 0, NULL, 0));
 
   grn_test_assert(grn_snip_exec(&context, snip,
-                                text_ja_utf8, strlen(text_ja_utf8),
+                                text, text_len,
                                 &n_results, &max_tagged_len));
   cut_assert_equal_uint(1, n_results);
-  cut_assert_equal_uint(105, max_tagged_len);
+  //cut_assert_equal_uint(expected_len + 1, max_tagged_len);
   result = g_new(gchar, max_tagged_len);
 
   grn_test_assert(grn_snip_get_result(&context, snip, 0, result, &result_len));
-  cut_assert_equal_string("備えた、高速かつ高精度な[[転置\n"
-                          "インデックス]]タイプのエンジンです。コン",
-                          result);
-  cut_assert_equal_uint(104, result_len);
+  cut_assert_equal_string(expected, result);
+  cut_assert_equal_uint(expected_len, result_len);
 }
 
 void
