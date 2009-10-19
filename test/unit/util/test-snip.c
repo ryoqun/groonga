@@ -477,7 +477,7 @@ data_tag_insertion(void)
   gcut_add_datum(label,                        \
                  "flags", G_TYPE_INT, (flags), \
                  NULL)
-  ADD_DATUM("no flags", 
+  ADD_DATUM("no flags",
             0);
   ADD_DATUM("copy_tag",
             GRN_SNIP_COPY_TAG);
