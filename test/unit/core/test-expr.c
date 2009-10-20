@@ -27,7 +27,7 @@
   grn_test_assert(grn_expr_parse(&context, (expr), (str), strlen(str), \
                                  body, GRN_OP_MATCH, GRN_OP_AND, level))
 
-static void grn_test_assert_expr(gchar *inspected, grn_obj *expr);
+static void grn_test_assert_expr(const gchar *inspected, grn_obj *expr);
 
 static gchar *tmp_directory;
 static gchar *path;
@@ -513,6 +513,8 @@ grn_test_assert_select(const GList *expected, grn_obj *result)
   }
   cut_assert_equal_uint(0, grn_table_cursor_close(&context, cursor));
   gcut_take_list(records, g_free);
+  expected = g_list_sort((GList *)expected, (GCompareFunc)g_utf8_collate);
+  records = g_list_sort((GList *)records, (GCompareFunc)g_utf8_collate);
   gcut_assert_equal_list_string(expected, records);
 }
 
@@ -612,7 +614,34 @@ test_table_select_equal_by_query_string(void)
 }
 
 void
-test_table_select_range_by_query_string(void)
+data_table_select_range_by_query(void)
+{
+#define ADD_DATUM(label, query, parse_level, inspected_expr)      \
+  gcut_add_datum(label,                                           \
+                 "query", G_TYPE_STRING, query,                   \
+                 "parse_level", G_TYPE_INT, parse_level,           \
+                 "inspected_expr", G_TYPE_STRING, inspected_expr, \
+                 NULL)
+
+  ADD_DATUM("table query parse level - normal",
+            "size:>=14 + size:<=19", 2,
+            "noname(?0:\"\"){size GET_VALUE \"14\" GREATER_EQUAL "
+                            "size GET_VALUE \"19\" LESS_EQUAL AND}");
+  ADD_DATUM("table query parse level - expanded",
+            "(size:14 OR size:>14) + (size:19 OR size:<19)", 2,
+            "noname(?0:\"\"){size GET_VALUE 14 EQUAL size GET_VALUE \"14\" GREATER OR "
+                            "size GET_VALUE 19 EQUAL size GET_VALUE \"19\" LESS OR AND}");
+  ADD_DATUM("expression parse level - normal",
+            "size>=14 && size<=19", 4,
+            "noname(?0:\"\"){size GET_VALUE 14 GREATER_EQUAL size GET_VALUE 19 LESS_EQUAL AND}");
+  ADD_DATUM("expression parse level - opposite order",
+            "19>=size && 14<=size", 4,
+            "noname(?0:\"\"){19 size GET_VALUE GREATER_EQUAL 14 size GET_VALUE LESS_EQUAL AND}");
+#undef ADD_DATUM
+}
+
+void
+test_table_select_range_by_query(gconstpointer data)
 {
   grn_obj *cond, *v, *res, textbuf, intbuf;
   GRN_TEXT_INIT(&textbuf, 0);
@@ -625,18 +654,10 @@ test_table_select_range_by_query_string(void)
   v = grn_expr_add_var(&context, cond, NULL, 0);
   cut_assert_not_null(v);
   GRN_RECORD_INIT(v, 0, grn_obj_id(&context, docs));
-  //PARSE(cond, "(size == 14 && (body = \"fourteenlength\")) || (size > 0)", 4);
-  PARSE(cond, "14 == size", 4);
+  PARSE(cond, gcut_data_get_string(data, "query"),
+              gcut_data_get_int(data, "parse_level"));
   grn_expr_compile(&context, cond);
-  //grn_test_assert_expr("noname(?0:\"\"){size GET_VALUE \"14\" GREATER_EQUAL "
-  //                                     "size GET_VALUE \"19\" LESS_EQUAL AND}",
-  //                     cond);
-  GString *s = g_string_new("");
-  grn_test_expr_inspect (s, &context, cond);
-  printf("grn_test_expr_inspect(): %s\n", s->str);
-  g_string_free(s, TRUE);
-
-
+  grn_test_assert_expr(gcut_data_get_string(data, "inspected_expr"), cond);
   res = grn_table_create(&context, NULL, 0, NULL,
                          GRN_TABLE_HASH_KEY|GRN_OBJ_WITH_SUBREC, docs, NULL);
   cut_assert_not_null(res);
@@ -971,7 +992,7 @@ test_table_select_match_equal(void)
 grn_rc grn_expr_inspect(grn_ctx *ctx, grn_obj *buf, grn_obj *expr);
 
 static void
-grn_test_assert_expr(gchar *inspected, grn_obj *expr)
+grn_test_assert_expr(const gchar *inspected, grn_obj *expr)
 {
   grn_obj strbuf;
   GRN_TEXT_INIT(&strbuf, 0);
