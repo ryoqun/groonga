@@ -27,7 +27,8 @@
   grn_test_assert(grn_expr_parse(&context, (expr), (str), strlen(str), \
                                  body, GRN_OP_MATCH, GRN_OP_AND, level))
 
-static void grn_assert_expr(gchar *inspected, grn_obj *expr);
+static void grn_test_assert_expr(gchar *inspected, grn_obj *expr);
+static void grn_test_assert_result_table(grn_obj *result);
 
 static gchar *tmp_directory;
 static gchar *path;
@@ -505,7 +506,7 @@ test_table_select_equal(void)
   grn_expr_append_const(&context, cond, &textbuf, GRN_OP_PUSH, 1);
   grn_expr_append_op(&context, cond, GRN_OP_EQUAL, 2);
   grn_expr_compile(&context, cond);
-  grn_assert_expr("noname(?0:\"\"){?0 body GET_VALUE \"poyo moge hoge moge moge moge\" EQUAL}", cond);
+  grn_test_assert_expr("noname(?0:\"\"){?0 body GET_VALUE \"poyo moge hoge moge moge moge\" EQUAL}", cond);
 
   res = grn_table_create(&context, NULL, 0, NULL,
                          GRN_TABLE_HASH_KEY|GRN_OBJ_WITH_SUBREC, docs, NULL);
@@ -537,7 +538,7 @@ test_table_select_equal_by_query_string(void)
   GRN_RECORD_INIT(v, 0, grn_obj_id(&context, docs));
   PARSE(cond, "body:\"poyo moge hoge moge moge moge\"",2);
   grn_expr_compile(&context, cond);
-  grn_assert_expr("noname(?0:\"\"){body GET_VALUE \"poyo moge hoge moge moge moge\" EQUAL}", cond);
+  grn_test_assert_expr("noname(?0:\"\"){body GET_VALUE \"poyo moge hoge moge moge moge\" EQUAL}", cond);
   res = grn_table_create(&context, NULL, 0, NULL,
                          GRN_TABLE_HASH_KEY|GRN_OBJ_WITH_SUBREC, docs, NULL);
   cut_assert_not_null(res);
@@ -545,11 +546,37 @@ test_table_select_equal_by_query_string(void)
   cut_assert_not_null(grn_table_select(&context, docs, cond, res, GRN_OP_OR));
 
   cut_assert_equal_uint(1, grn_table_size(&context, res));
+  //grn_test_assert_result_table(res);
 
   grn_test_assert(grn_obj_close(&context, res));
   grn_test_assert(grn_obj_close(&context, cond));
   grn_test_assert(grn_obj_close(&context, &textbuf));
   grn_test_assert(grn_obj_close(&context, &intbuf));
+}
+
+static void
+grn_test_assert_result_table(grn_obj *result)
+{
+  grn_id id;
+  grn_table_cursor *tc;
+  tc = grn_table_cursor_open(&context, result, NULL, 0, NULL, 0, 0, 0, 0);
+  cut_assert_not_null(tc);
+  while ((id = grn_table_cursor_next(&context, tc)) != GRN_ID_NIL) {
+    void *value;
+    grn_id *id;
+    grn_obj record_value;
+
+    grn_table_cursor_get_key(&context, tc, &value);
+    id = value;
+    GRN_TEXT_INIT(&record_value, 0);
+    grn_obj_get_value(&context, body, *id, &record_value);
+    const char *ss = GRN_TEXT_VALUE(&record_value);
+
+    GString *s = g_string_new("");
+    grn_test_object_inspect (s, &context, result);
+    printf("grn_test_object_inspect(): %d, %s %s\n", *id, ss, s->str);
+  }
+  cut_assert_equal_uint(0, grn_table_cursor_close(&context, tc));
 }
 
 void
@@ -566,17 +593,18 @@ test_table_select_range_by_query_string(void)
   v = grn_expr_add_var(&context, cond, NULL, 0);
   cut_assert_not_null(v);
   GRN_RECORD_INIT(v, 0, grn_obj_id(&context, docs));
-  PARSE(cond, "size:>=14 + size:<=19", 2);
+  PARSE(cond, "body:%hoge", 2);
   grn_expr_compile(&context, cond);
-  grn_assert_expr("noname(?0:\"\"){size GET_VALUE \"14\" GREATER_EQUAL "
-                                  "size GET_VALUE \"19\" LESS_EQUAL AND}", cond);
+  //grn_test_assert_expr("noname(?0:\"\"){size GET_VALUE \"14\" GREATER_EQUAL "
+  //                                "size GET_VALUE \"19\" LESS_EQUAL AND}", cond);
   res = grn_table_create(&context, NULL, 0, NULL,
                          GRN_TABLE_HASH_KEY|GRN_OBJ_WITH_SUBREC, docs, NULL);
   cut_assert_not_null(res);
 
   cut_assert_not_null(grn_table_select(&context, docs, cond, res, GRN_OP_OR));
 
-  cut_assert_equal_uint(5, grn_table_size(&context, res));
+  //cut_assert_equal_uint(5, grn_table_size(&context, res));
+  grn_test_assert_result_table(res);
 
   grn_test_assert(grn_obj_close(&context, res));
   grn_test_assert(grn_obj_close(&context, cond));
@@ -654,6 +682,7 @@ test_table_select_select(void)
   grn_expr_exec(&context, expr, 0);
 
   cut_assert_equal_uint(3, grn_table_size(&context, res));
+  //grn_test_assert_result_table(res);
 
   grn_test_assert(grn_obj_close(&context, expr));
   grn_test_assert(grn_obj_close(&context, res));
@@ -832,6 +861,7 @@ test_table_select_match(void)
   cut_assert_not_null(grn_table_select(&context, docs, cond, res, GRN_OP_OR));
 
   cut_assert_equal_uint(6, grn_table_size(&context, res));
+  //grn_test_assert_result_table(res);
 
   grn_test_assert(grn_obj_close(&context, res));
   grn_test_assert(grn_obj_close(&context, cond));
@@ -885,7 +915,7 @@ test_table_select_match_equal(void)
 }
 
 static void
-grn_assert_expr(gchar *inspected, grn_obj *expr)
+grn_test_assert_expr(gchar *inspected, grn_obj *expr)
 {
   grn_obj strbuf;
   GRN_TEXT_INIT(&strbuf, 0);
@@ -941,7 +971,7 @@ test_expr_parse(gconstpointer data)
   PARSE(cond, gcut_data_get_string(data, "query_poyo"),
               gcut_data_get_int(data, "query_poyo_parse_level"));
   grn_expr_append_op(&context, cond, GRN_OP_AND, 2);
-  grn_assert_expr("noname(?0:\"\"){body GET_VALUE \"hoge\" MATCH "
+  grn_test_assert_expr("noname(?0:\"\"){body GET_VALUE \"hoge\" MATCH "
                                   "body GET_VALUE \"moge\" MATCH AND "
                                   "body GET_VALUE \"poyo\" MATCH AND}", cond);
   res = grn_table_create(&context, NULL, 0, NULL,
@@ -960,7 +990,7 @@ test_expr_parse(gconstpointer data)
   GRN_RECORD_INIT(v, 0, grn_obj_id(&context, docs));
   PARSE(cond, gcut_data_get_string(data, "query_size"),
               gcut_data_get_int(data, "query_size_parse_level"));
-  grn_assert_expr("noname(?0:\"\"){size GET_VALUE 14 EQUAL}", cond);
+  grn_test_assert_expr("noname(?0:\"\"){size GET_VALUE 14 EQUAL}", cond);
   res = grn_table_create(&context, NULL, 0, NULL,
                          GRN_TABLE_HASH_KEY|GRN_OBJ_WITH_SUBREC, docs, NULL);
   cut_assert_not_null(res);
@@ -1248,7 +1278,8 @@ test_expr_value_access(void)
   GRN_EXPR_CREATE_FOR_QUERY(&context, docs, cond, v);
   cut_assert_not_null(cond);
   cut_assert_not_null(v);
-  PARSE(cond, "_value:1", 2);
+  //printf("id: %d\n", id);
+  PARSE(cond, "_key.size:new", 2);
   res = grn_table_select(&context, docs, cond, NULL, GRN_OP_OR);
   cut_assert_not_null(res);
   cut_assert_equal_uint(1, grn_table_size(&context, res));
