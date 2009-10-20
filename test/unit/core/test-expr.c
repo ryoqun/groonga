@@ -625,11 +625,18 @@ test_table_select_range_by_query_string(void)
   v = grn_expr_add_var(&context, cond, NULL, 0);
   cut_assert_not_null(v);
   GRN_RECORD_INIT(v, 0, grn_obj_id(&context, docs));
-  PARSE(cond, "size:>=14 + size:<=19", 2);
+  //PARSE(cond, "(size == 14 && (body = \"fourteenlength\")) || (size > 0)", 4);
+  PARSE(cond, "14 == size", 4);
   grn_expr_compile(&context, cond);
-  grn_test_assert_expr("noname(?0:\"\"){size GET_VALUE \"14\" GREATER_EQUAL "
-                                       "size GET_VALUE \"19\" LESS_EQUAL AND}",
-                       cond);
+  //grn_test_assert_expr("noname(?0:\"\"){size GET_VALUE \"14\" GREATER_EQUAL "
+  //                                     "size GET_VALUE \"19\" LESS_EQUAL AND}",
+  //                     cond);
+  GString *s = g_string_new("");
+  grn_test_expr_inspect (s, &context, cond);
+  printf("grn_test_expr_inspect(): %s\n", s->str);
+  g_string_free(s, TRUE);
+
+
   res = grn_table_create(&context, NULL, 0, NULL,
                          GRN_TABLE_HASH_KEY|GRN_OBJ_WITH_SUBREC, docs, NULL);
   cut_assert_not_null(res);
