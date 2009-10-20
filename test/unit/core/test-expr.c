@@ -44,6 +44,7 @@ void test_table_select_equal_by_query(void);
 void test_table_select_equal_indexed(void);
 void data_table_select_range_by_query(void);
 void test_table_select_range_by_query(gconstpointer data);
+void test_table_select_assignment_inside_query(void);
 void test_table_select_select(void);
 void test_table_select_search(void);
 void test_table_select_select_search(void);
@@ -706,6 +707,48 @@ test_table_select_range_by_query(gconstpointer data)
                                                    "hoge moge moge moge",
                                                    "moge hoge hoge",
                                                    "moge hoge fuga fuga",
+                                                   NULL), res);
+
+  grn_test_assert(grn_obj_close(&context, res));
+  grn_test_assert(grn_obj_close(&context, cond));
+  grn_test_assert(grn_obj_close(&context, &textbuf));
+  grn_test_assert(grn_obj_close(&context, &intbuf));
+}
+
+void
+test_table_select_assignment_inside_query(void)
+{
+  grn_obj *cond, *v, *res, textbuf, intbuf;
+  GRN_TEXT_INIT(&textbuf, 0);
+  GRN_UINT32_INIT(&intbuf, 0);
+
+  prepare_data(&textbuf, &intbuf);
+
+  cond = grn_expr_create(&context, NULL, 0);
+  cut_assert_not_null(cond);
+  v = grn_expr_add_var(&context, cond, NULL, 0);
+  cut_assert_not_null(v);
+  GRN_RECORD_INIT(v, 0, grn_obj_id(&context, docs));
+  //PARSE(cond, "(size == 14) && (body = \"new\")",4);
+  //PARSE(cond, "(body == \"poyo moge hoge moge moge moge\") && (body = \"new\")",4);
+  //PARSE(cond, "(body = \"new\") && (body == \"new\")",4);
+  //PARSE(cond, "(body == \"new\") && (body = \"new\")",4);
+  GString *s = g_string_new("");
+  grn_test_expr_inspect(s, &context, cond);
+  printf("grn_test_inspect_expr(): %s\n", s->str);
+  g_string_free(s, TRUE);
+
+  grn_expr_compile(&context, cond);
+  //grn_test_assert_expr("noname(?0:\"\"){body GET_VALUE "
+  //                     "\"poyo moge hoge moge moge moge\" EQUAL}", cond);
+  res = grn_table_create(&context, NULL, 0, NULL,
+                         GRN_TABLE_HASH_KEY|GRN_OBJ_WITH_SUBREC, docs, NULL);
+  cut_assert_not_null(res);
+
+  cut_assert_not_null(grn_table_select(&context, docs, cond, res, GRN_OP_OR));
+
+  grn_test_assert_select(gcut_take_new_list_string("poyo moge hoge "
+                                                   "moge moge moge",
                                                    NULL), res);
 
   grn_test_assert(grn_obj_close(&context, res));
