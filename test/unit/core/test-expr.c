@@ -28,7 +28,7 @@
                                  body, GRN_OP_MATCH, GRN_OP_AND, level))
 
 static void grn_test_assert_expr(gchar *inspected, grn_obj *expr);
-static void grn_test_assert_result_table(grn_obj *result);
+static void grn_test_assert_result_table(GList* expected, grn_obj *result);
 
 static gchar *tmp_directory;
 static gchar *path;
@@ -555,14 +555,16 @@ test_table_select_equal_by_query_string(void)
 }
 
 static void
-grn_test_assert_result_table(grn_obj *result)
+grn_test_assert_result_table(GList *expected, grn_obj *result)
 {
+  GList *records = NULL;
   grn_id id;
   grn_table_cursor *tc;
   tc = grn_table_cursor_open(&context, result, NULL, 0, NULL, 0, 0, 0, 0);
   cut_assert_not_null(tc);
   while ((id = grn_table_cursor_next(&context, tc)) != GRN_ID_NIL) {
     void *value;
+    int size;
     grn_id *id;
     grn_obj record_value;
 
@@ -570,13 +572,19 @@ grn_test_assert_result_table(grn_obj *result)
     id = value;
     GRN_TEXT_INIT(&record_value, 0);
     grn_obj_get_value(&context, body, *id, &record_value);
-    const char *ss = GRN_TEXT_VALUE(&record_value);
 
-    GString *s = g_string_new("");
-    grn_test_object_inspect (s, &context, result);
-    printf("grn_test_object_inspect(): %d, %s %s\n", *id, ss, s->str);
+    value = GRN_TEXT_VALUE(&record_value);
+    size = GRN_TEXT_LEN(&record_value);
+    GString *null_terminated_key;
+    null_terminated_key = g_string_new_len(value, size);
+    records = g_list_append(records, null_terminated_key->str);
+
+    printf("grn_test_object_inspect(): %s\n", null_terminated_key->str);
+    g_string_free(null_terminated_key, FALSE);
   }
   cut_assert_equal_uint(0, grn_table_cursor_close(&context, tc));
+  gcut_take_list(records, NULL);
+  gcut_assert_equal_list_string(expected, records);
 }
 
 void
@@ -604,7 +612,12 @@ test_table_select_range_by_query_string(void)
   cut_assert_not_null(grn_table_select(&context, docs, cond, res, GRN_OP_OR));
 
   //cut_assert_equal_uint(5, grn_table_size(&context, res));
-  grn_test_assert_result_table(res);
+
+  grn_test_assert_result_table(gcut_take_new_list_string("セナ",
+                                                    "ナセナセ",
+                                                    "Groonga",
+                                                    "セナ + Ruby",
+                                                    NULL), res);
 
   grn_test_assert(grn_obj_close(&context, res));
   grn_test_assert(grn_obj_close(&context, cond));
