@@ -63,6 +63,9 @@ const gchar *grn_test_type_inspect        (grn_ctx          *context,
 void        grn_test_object_inspect       (GString          *output,
                                            grn_ctx          *context,
                                            grn_obj          *object);
+void        grn_test_expr_inspect         (GString          *output,
+                                           grn_ctx          *context,
+                                           grn_obj          *expr);
 
 
 #endif

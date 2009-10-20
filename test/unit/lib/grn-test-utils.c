@@ -562,3 +562,17 @@ grn_test_object_inspect (GString *output, grn_ctx *context, grn_obj *object)
 
   g_string_append(output, ">");
 }
+
+/* REMOVE ME */
+grn_rc grn_expr_inspect(grn_ctx *ctx, grn_obj *buf, grn_obj *expr);
+
+void
+grn_test_expr_inspect (GString *output, grn_ctx *context, grn_obj *expr)
+{
+  grn_obj strbuf;
+  GRN_TEXT_INIT(&strbuf, 0);
+  grn_expr_inspect(context, &strbuf, expr);
+  GRN_TEXT_PUTC(context, &strbuf, '\0');
+  g_string_append(output, GRN_TEXT_VALUE(&strbuf));
+  GRN_OBJ_FIN(context, &strbuf);
+}
