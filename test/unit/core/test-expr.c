@@ -746,6 +746,9 @@ test_table_select_assignment_inside_query(void)
   //PARSE(cond, "(body == body) && (body @ \"assigned\")",4);
   //PARSE(cond, "(body > body) && (body @ \"assigned\")",4);
   //PARSE(cond, "(body == \"assigned\") && (body = \"assigned\")",4);
+  //PARSE(cond, "body == body", 4); // SIGSEGV
+  //PARSE(cond, "body > body", 4); // SIGSEGV
+  //PARSE(cond, "size > size", 4); // SIGSEGV
   {
     GString *s = g_string_new("");
     grn_test_expr_inspect(s, &context, cond);
