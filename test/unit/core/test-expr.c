@@ -715,6 +715,11 @@ test_table_select_range_by_query(gconstpointer data)
   grn_test_assert(grn_obj_close(&context, &intbuf));
 }
 
+//void
+//data_table_select_assignment_inside_query(void)
+//{
+//}
+
 void
 test_table_select_assignment_inside_query(void)
 {
@@ -729,14 +734,24 @@ test_table_select_assignment_inside_query(void)
   v = grn_expr_add_var(&context, cond, NULL, 0);
   cut_assert_not_null(v);
   GRN_RECORD_INIT(v, 0, grn_obj_id(&context, docs));
-  //PARSE(cond, "(size == 14) && (body = \"new\")",4);
-  //PARSE(cond, "(body == \"poyo moge hoge moge moge moge\") && (body = \"new\")",4);
-  //PARSE(cond, "(body = \"new\") && (body == \"new\")",4);
-  //PARSE(cond, "(body == \"new\") && (body = \"new\")",4);
-  GString *s = g_string_new("");
-  grn_test_expr_inspect(s, &context, cond);
-  printf("grn_test_inspect_expr(): %s\n", s->str);
-  g_string_free(s, TRUE);
+  //PARSE(cond, "(size == 14) && (body = \"assigned\")",4);
+  //PARSE(cond, "(content = \"アサインメント\") == 3",4);
+  //PARSE(cond, "((body == \"poyo moge hoge moge moge moge\") && (body = \"assigned\")) || body != \"assigned\"",4);
+  //PARSE(cond, "(body = \"assignment\") == 3",4); // SIGSEGV
+  //PARSE(cond, "(size = 100) == 3",4); // SIGSEGV
+  //PARSE(cond, "(body == \"poyo moge hoge moge moge moge\") && (body = \"assigned\")",4);
+  //PARSE(cond, "(body @ \"assigned\") && (body = \"assigned\")",4);
+  //PARSE(cond, "(body == \"assigned\") && (body = \"assigned\")",4);
+  //PARSE(cond, "(body = body) && (body @ \"assigned\")",4);
+  //PARSE(cond, "(body == body) && (body @ \"assigned\")",4);
+  //PARSE(cond, "(body > body) && (body @ \"assigned\")",4);
+  //PARSE(cond, "(body == \"assigned\") && (body = \"assigned\")",4);
+  {
+    GString *s = g_string_new("");
+    grn_test_expr_inspect(s, &context, cond);
+    printf("grn_test_inspect_expr(): %s\n", s->str);
+    g_string_free(s, TRUE);
+  }
 
   grn_expr_compile(&context, cond);
   //grn_test_assert_expr("noname(?0:\"\"){body GET_VALUE "
