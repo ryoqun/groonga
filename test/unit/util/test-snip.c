@@ -28,8 +28,8 @@ void test_simple_exec_euc_jp(void);
 void test_simple_exec_sjis(void);
 void test_simple_exec_utf8(void);
 void test_exec_with_invalid_argument(void);
-void data_tag_insertion(void);
-void test_tag_insertion(gconstpointer data);
+void data_proper_tag_insertion(void);
+void test_proper_tag_insertion(gconstpointer data);
 void test_exec_with_normalize(void);
 void test_exec_with_many_results(void);
 void test_customized_tag(void);
@@ -471,7 +471,7 @@ test_exec_with_normalize(void)
 }
 
 void
-data_tag_insertion(void)
+data_proper_tag_insertion(void)
 {
 #define ADD_DATUM(label, flags)                \
   gcut_add_datum(label,                        \
@@ -497,7 +497,7 @@ data_tag_insertion(void)
 }
 
 void
-test_tag_insertion(gconstpointer data)
+test_proper_tag_insertion(gconstpointer data)
 {
   unsigned int n_results;
   unsigned int max_tagged_len;
