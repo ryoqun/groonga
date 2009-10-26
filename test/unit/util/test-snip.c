@@ -473,25 +473,33 @@ test_exec_with_normalize(void)
 void
 data_proper_tag_insertion(void)
 {
-#define ADD_DATUM(label, flags)                \
-  gcut_add_datum(label,                        \
-                 "flags", G_TYPE_INT, (flags), \
+#define ADD_DATUM(label, expected, flags)              \
+  gcut_add_datum(label,                                \
+                 "expected", G_TYPE_STRING, (expected),\
+                 "flags", G_TYPE_INT, (flags),         \
                  NULL)
-  ADD_DATUM("no flags",
+  const gchar tag_after_space[] =
+    "Groonga is an [[embeddable]] fulltext search engine, which you can use in\n"
+    "conjunction with various scrip";
+  const gchar tag_before_space[] =
+    "Groonga is an[[ embeddable]] fulltext search engine, which you can use in\n"
+    "conjunction with various scrip";
+
+  ADD_DATUM("no flags", tag_after_space,
             0);
-  ADD_DATUM("copy_tag",
+  ADD_DATUM("copy_tag", tag_after_space,
             GRN_SNIP_COPY_TAG);
-  ADD_DATUM("skip_spaces",
+  ADD_DATUM("skip_spaces", tag_after_space,
             GRN_SNIP_SKIP_LEADING_SPACES);
-  ADD_DATUM("copy_tag and skip_spaces",
+  ADD_DATUM("copy_tag and skip_spaces", tag_after_space,
             GRN_SNIP_COPY_TAG | GRN_SNIP_SKIP_LEADING_SPACES);
-  ADD_DATUM("normalize",
+  ADD_DATUM("normalize", tag_before_space,
             GRN_SNIP_NORMALIZE);
-  ADD_DATUM("normalize and copy_tag",
+  ADD_DATUM("normalize and copy_tag", tag_before_space,
             GRN_SNIP_NORMALIZE | GRN_SNIP_COPY_TAG);
-  ADD_DATUM("normalize and skip_spaces",
+  ADD_DATUM("normalize and skip_spaces", tag_after_space,
             GRN_SNIP_NORMALIZE | GRN_SNIP_SKIP_LEADING_SPACES);
-  ADD_DATUM("normalize, copy_tag and skip_spaces",
+  ADD_DATUM("normalize, copy_tag and skip_spaces", tag_after_space,
             GRN_SNIP_NORMALIZE | GRN_SNIP_COPY_TAG | GRN_SNIP_SKIP_LEADING_SPACES);
 #undef ADD_DATUM
 }
@@ -502,9 +510,7 @@ test_proper_tag_insertion(gconstpointer data)
   unsigned int n_results;
   unsigned int max_tagged_len;
   const gchar keyword[] = "embeddable";
-  const gchar expected[] =
-    "Groonga is an [[embeddable]] fulltext search engine, which you can use in\n"
-    "conjunction with various scrip";
+  const gchar *expected;
   gchar *result;
   unsigned int text_len, keyword_len, result_len, expected_len;
 
@@ -513,6 +519,7 @@ test_proper_tag_insertion(gconstpointer data)
 
   text_len = strlen(text);
   keyword_len = strlen(keyword);
+  expected = gcut_data_get_string(data, "expected");
   expected_len = strlen(expected);
 
   cut_assert_open_snip();
