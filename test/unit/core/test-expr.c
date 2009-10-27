@@ -465,7 +465,7 @@ test_chained_column_resolution(void)
   cut_assert_not_null(child_column);
 
   GRN_TEXT_INIT(&textbuf, 0);
-  GRN_RECORD_INIT(&r, 0, grn_obj_id(&context, parent_table));
+  GRN_RECORD_INIT(&r, 0, grn_obj_id(&context, child_table));
 
   /* insert rows */
   parent_record = grn_table_add(&context, parent_table, "parent_record_key", 17, NULL);
