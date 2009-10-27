@@ -438,7 +438,8 @@ test_chained_column_resolution(void)
   grn_obj *cond, *variable, *result;
   grn_obj textbuf;
   grn_id parent_record, child_record;
-  const char query[] = "child_clumn:@parent_column_value";
+  grn_obj r;
+  const char query[] = ".foreign:@huge";
 
   /* parent table */
   parent_table = grn_table_create(&context, "parent_table", 12, NULL, GRN_OBJ_TABLE_NO_KEY|GRN_OBJ_PERSISTENT,
@@ -475,6 +476,27 @@ test_chained_column_resolution(void)
   cut_assert_equal_int(1, child_record);
   GRN_TEXT_SETS(&context, &textbuf, "child_column_value");
   grn_test_assert(grn_obj_set_value(&context, child_column, child_record, &textbuf, GRN_OBJ_SET));
+  GRN_RECORD_SET(&context, &r, child_record);
+  grn_test_assert(grn_obj_set_value(&context, foreign_column, parent_record, &r, GRN_OBJ_SET));
+
+  parent_record = grn_table_add(&context, parent_table, "hoge", 13, NULL);
+  cut_assert_equal_int(2, parent_record);
+  GRN_TEXT_SETS(&context, &textbuf, "poyo");
+  grn_test_assert(grn_obj_set_value(&context, parent_column, parent_record, &textbuf, GRN_OBJ_SET));
+
+
+  child_record = grn_table_add(&context, child_table, "moge", 12, NULL);
+  cut_assert_equal_int(2, child_record);
+  GRN_TEXT_SETS(&context, &textbuf, "huga");
+  grn_test_assert(grn_obj_set_value(&context, child_column, child_record, &textbuf, GRN_OBJ_SET));
+  GRN_RECORD_SET(&context, &r, child_record);
+  grn_test_assert(grn_obj_set_value(&context, foreign_column, parent_record, &r, GRN_OBJ_SET));
+
+
+
+
+
+
 
   cond = grn_expr_create(&context, NULL, 0);
   cut_assert_not_null(cond);
