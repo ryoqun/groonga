@@ -439,7 +439,7 @@ test_chained_column_resolution(void)
   grn_obj textbuf;
   grn_id parent_record, child_record;
   grn_obj r;
-  const char query[] = "foreign.child_column:aho";
+  const char query[] = "foreign.child_columna:aho";
 
   /* parent table */
   parent_table = grn_table_create(&context, "parent_table", 12, NULL, GRN_OBJ_TABLE_PAT_KEY|GRN_OBJ_PERSISTENT,
