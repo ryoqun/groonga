@@ -439,10 +439,10 @@ test_chained_column_resolution(void)
   grn_obj textbuf;
   grn_id parent_record, child_record;
   grn_obj r;
-  const char query[] = ".foreigna:@huge";
+  const char query[] = "parent_column:@huge";
 
   /* parent table */
-  parent_table = grn_table_create(&context, "parent_table", 12, NULL, GRN_OBJ_TABLE_NO_KEY|GRN_OBJ_PERSISTENT,
+  parent_table = grn_table_create(&context, "parent_table", 12, NULL, GRN_OBJ_TABLE_PAT_KEY|GRN_OBJ_PERSISTENT,
                                   NULL, NULL);
   cut_assert_not_null(parent_table);
 
