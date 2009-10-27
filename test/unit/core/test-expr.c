@@ -28,6 +28,8 @@ static gchar *path;
 static grn_ctx context;
 static grn_obj *database;
 
+static void grn_assert_expr(gchar *inspected, grn_obj *expr);
+
 void test_accessor(void);
 void test_expr(void);
 void test_persistent_expr(void);
@@ -423,6 +425,80 @@ test_expr_query(void)
   grn_obj_close(&context, lc);
   grn_obj_close(&context, t1);
 }
+
+//void
+//data_chained_column_resolution(void)
+//{
+//}
+
+void
+test_chained_column_resolution(void)
+{
+  grn_obj *parent_table, *child_table, *parent_column, *child_column, *foreign_column;
+  grn_obj *cond, *variable, *result;
+  grn_obj textbuf;
+  grn_id parent_record, child_record;
+  const char query[] = "child_column:@parent_column_value";
+
+  /* parent table */
+  parent_table = grn_table_create(&context, "parent_table", 12, NULL, GRN_OBJ_TABLE_NO_KEY|GRN_OBJ_PERSISTENT,
+                                  NULL, NULL);
+  cut_assert_not_null(parent_table);
+
+  /* child table */
+  child_table = grn_table_create(&context, "child_table", 11, NULL, GRN_OBJ_TABLE_PAT_KEY|GRN_OBJ_PERSISTENT,
+                                 grn_ctx_at(&context, GRN_DB_SHORT_TEXT), NULL);
+  cut_assert_not_null(child_table);
+
+  /* actual column */
+  foreign_column = grn_column_create(&context, parent_table, "foreign", 7, NULL, GRN_OBJ_COLUMN_SCALAR|GRN_OBJ_PERSISTENT,
+			 child_table);
+  cut_assert_not_null(foreign_column);
+
+  parent_column = grn_column_create(&context, parent_table, "parent_column", 13, NULL,
+			 GRN_OBJ_COLUMN_SCALAR|GRN_OBJ_PERSISTENT, grn_ctx_at(&context, GRN_DB_TEXT));
+  cut_assert_not_null(parent_column);
+
+  child_column = grn_column_create(&context, child_table, "child_column", 12, NULL,
+			 GRN_OBJ_COLUMN_SCALAR|GRN_OBJ_PERSISTENT, grn_ctx_at(&context, GRN_DB_TEXT));
+  cut_assert_not_null(child_column);
+
+  GRN_TEXT_INIT(&textbuf, 0);
+
+  /* insert rows */
+  parent_record = grn_table_add(&context, parent_table, "parent_record_key", 13, NULL);
+  cut_assert_equal_int(1, parent_record);
+  GRN_TEXT_SETS(&context, &textbuf, "parent_column_value");
+  grn_test_assert(grn_obj_set_value(&context, parent_column, parent_record, &textbuf, GRN_OBJ_SET));
+
+  child_record = grn_table_add(&context, child_table, "child_record_key", 12, NULL);
+  cut_assert_equal_int(1, child_record);
+  GRN_TEXT_SETS(&context, &textbuf, "child_column_value");
+  grn_test_assert(grn_obj_set_value(&context, child_column, child_record, &textbuf, GRN_OBJ_SET));
+
+  cond = grn_expr_create(&context, NULL, 0);
+  cut_assert_not_null(cond);
+  variable = grn_expr_add_var(&context, cond, NULL, 0);
+  cut_assert_not_null(variable);
+  GRN_RECORD_INIT(variable, 0, grn_obj_id(&context, parent_table));
+  grn_expr_parse(&context, cond, (query), strlen(query), parent_column, GRN_OP_MATCH, GRN_OP_AND, 2);
+
+  //grn_assert_expr("noname(?0:\"\"){parent_column GET_VALUE \"parent_column_value\" MATCH}", cond);
+  result = grn_table_create(&context, NULL, 0, NULL,
+                         GRN_TABLE_HASH_KEY|GRN_OBJ_WITH_SUBREC, parent_table, NULL);
+  cut_assert_not_null(result);
+  cut_assert_not_null(grn_table_select(&context, parent_table, cond, result, GRN_OP_OR));
+
+  cut_assert_equal_uint(1, grn_table_size(&context, result));
+
+  grn_test_assert(grn_obj_close(&context, &textbuf));
+  grn_test_assert(grn_obj_close(&context, parent_table));
+  grn_test_assert(grn_obj_close(&context, child_table));
+  grn_test_assert(grn_obj_close(&context, parent_column));
+  grn_test_assert(grn_obj_close(&context, child_column));
+  grn_test_assert(grn_obj_close(&context, foreign_column));
+}
+
 
 static grn_obj *docs, *terms, *size, *body, *index_body;
 
