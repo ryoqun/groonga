@@ -439,7 +439,7 @@ test_chained_column_resolution(void)
   grn_obj textbuf;
   grn_id parent_record, child_record;
   grn_obj r;
-  const char query[] = "name:child_column_value";
+  const char query[] = "name:%child_co";
 
   /* parent table */
   //parent_table = grn_table_create(&context, "parent_table", 12, NULL, GRN_OBJ_TABLE_PAT_KEY|GRN_OBJ_PERSISTENT,
@@ -447,8 +447,8 @@ test_chained_column_resolution(void)
   //cut_assert_not_null(parent_table);
 
   /* child table */
-  child_table = grn_table_create(&context, "child_table", 11, NULL, GRN_OBJ_TABLE_PAT_KEY|GRN_OBJ_PERSISTENT,
-                                 grn_ctx_at(&context, GRN_DB_SHORT_TEXT), NULL);
+  child_table = grn_table_create(&context, "child_table", 11, NULL, GRN_OBJ_TABLE_NO_KEY|GRN_OBJ_PERSISTENT,
+                                 NULL, NULL);
   cut_assert_not_null(child_table);
 
   /* actual column */
@@ -473,7 +473,7 @@ test_chained_column_resolution(void)
   //GRN_TEXT_SETS(&context, &textbuf, "parent_column_value");
   //grn_test_assert(grn_obj_set_value(&context, parent_column, parent_record, &textbuf, GRN_OBJ_SET));
 
-  child_record = grn_table_add(&context, child_table, "child_record_key", 16, NULL);
+  child_record = grn_table_add(&context, child_table, NULL, 0, NULL);
   cut_assert_equal_int(1, child_record);
   GRN_TEXT_SETS(&context, &textbuf, "child_column_value");
   grn_test_assert(grn_obj_set_value(&context, child_column, child_record, &textbuf, GRN_OBJ_SET));
@@ -486,7 +486,7 @@ test_chained_column_resolution(void)
   //grn_test_assert(grn_obj_set_value(&context, parent_column, parent_record, &textbuf, GRN_OBJ_SET));
 
 
-  child_record = grn_table_add(&context, child_table, "moge", 4, NULL);
+  child_record = grn_table_add(&context, child_table, NULL, 0, NULL);
   cut_assert_equal_int(2, child_record);
   GRN_TEXT_SETS(&context, &textbuf, "huga");
   grn_test_assert(grn_obj_set_value(&context, child_column, child_record, &textbuf, GRN_OBJ_SET));
@@ -600,12 +600,12 @@ prepare_data(grn_obj *textbuf, grn_obj *intbuf)
                           GRN_OBJ_TABLE_NO_KEY|GRN_OBJ_PERSISTENT, NULL, NULL);
   cut_assert_not_null(docs);
 
-  terms = grn_table_create(&context, "terms", 5, NULL,
-                           GRN_OBJ_TABLE_PAT_KEY|GRN_OBJ_PERSISTENT,
-                           grn_ctx_at(&context, GRN_DB_SHORT_TEXT), NULL);
-  cut_assert_not_null(terms);
-  grn_test_assert(grn_obj_set_info(&context, terms, GRN_INFO_DEFAULT_TOKENIZER,
-				   grn_ctx_at(&context, GRN_DB_BIGRAM)));
+//  terms = grn_table_create(&context, "terms", 5, NULL,
+//                           GRN_OBJ_TABLE_PAT_KEY|GRN_OBJ_PERSISTENT,
+//                           grn_ctx_at(&context, GRN_DB_SHORT_TEXT), NULL);
+//  cut_assert_not_null(terms);
+//  grn_test_assert(grn_obj_set_info(&context, terms, GRN_INFO_DEFAULT_TOKENIZER,
+//				   grn_ctx_at(&context, GRN_DB_BIGRAM)));
 
   size = grn_column_create(&context, docs, "size", 4, NULL,
                            GRN_OBJ_COLUMN_SCALAR|GRN_OBJ_PERSISTENT,
@@ -617,13 +617,13 @@ prepare_data(grn_obj *textbuf, grn_obj *intbuf)
                            grn_ctx_at(&context, GRN_DB_TEXT));
   cut_assert_not_null(body);
 
-  index_body = grn_column_create(&context, terms, "docs_body", 4, NULL,
-                                 GRN_OBJ_COLUMN_INDEX|GRN_OBJ_PERSISTENT|GRN_OBJ_WITH_POSITION,
-                                 docs);
-  cut_assert_not_null(index_body);
+//  index_body = grn_column_create(&context, terms, "docs_body", 4, NULL,
+//                                 GRN_OBJ_COLUMN_INDEX|GRN_OBJ_PERSISTENT|GRN_OBJ_WITH_POSITION,
+//                                 docs);
+//  cut_assert_not_null(index_body);
 
-  GRN_UINT32_SET(&context, intbuf, grn_obj_id(&context, body));
-  grn_obj_set_info(&context, index_body, GRN_INFO_SOURCE, intbuf);
+//  GRN_UINT32_SET(&context, intbuf, grn_obj_id(&context, body));
+//  grn_obj_set_info(&context, index_body, GRN_INFO_SOURCE, intbuf);
 
   INSERT_DATA("hoge");
   INSERT_DATA("fuga fuga");
