@@ -438,7 +438,7 @@ test_chained_column_resolution(void)
   grn_obj *cond, *variable, *result;
   grn_obj textbuf;
   grn_id parent_record, child_record;
-  const char query[] = ".child_clumn:@parent_column_value";
+  const char query[] = "child_clumn:@parent_column_value";
 
   /* parent table */
   parent_table = grn_table_create(&context, "parent_table", 12, NULL, GRN_OBJ_TABLE_NO_KEY|GRN_OBJ_PERSISTENT,
