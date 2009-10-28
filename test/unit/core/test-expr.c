@@ -438,7 +438,7 @@ test_chained_column_resolution(void)
   grn_obj *cond, *variable, *result;
   grn_obj textbuf;
   grn_id parent_record, child_record;
-  const char query[] = "foreign.child_column:child_column_value";
+  const char query[] = "foreign.a:moge + parent_column:poyo";
   grn_obj r;
 
   /* parent table */

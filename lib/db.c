@@ -3235,6 +3235,7 @@ grn_obj_get_accessor(grn_ctx *ctx, grn_obj *obj, const char *name, unsigned name
         break;
       default :
         res = NULL;
+        ctx->rc = GRN_SYNTAX_ERROR;
         goto exit;
       }
     } else {
@@ -3258,7 +3259,7 @@ grn_obj_get_accessor(grn_ctx *ctx, grn_obj *obj, const char *name, unsigned name
           break;
         } else {
           if (!obj->header.domain) {
-            // ERR(GRN_INVALID_ARGUMENT, "no such column: <%s>", name);
+            ERR(GRN_INVALID_ARGUMENT, "no such column: <%s>", name);
             res = NULL;
             goto exit;
           }
