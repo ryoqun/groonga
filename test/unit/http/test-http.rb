@@ -30,14 +30,14 @@ class HTTPTest < Test::Unit::TestCase
 
   def test_status
     response = get(command_path(:status))
-    assert_equal("text/javascript", response.content_type)
+    assert_equal("application/json", response.content_type)
     assert_equal(["alloc_count", "starttime", "uptime"],
                  JSON.parse(response.body).keys.sort)
   end
 
   def test_table_list
     response = get(command_path(:table_list))
-    assert_equal("text/javascript", response.content_type)
+    assert_equal("application/json", response.content_type)
     assert_equal([["id", "name", "path", "flags", "domain"]],
                  JSON.parse(response.body))
 
@@ -50,7 +50,7 @@ class HTTPTest < Test::Unit::TestCase
     assert_equal("true", response.body)
 
     response = get(command_path(:table_list))
-    assert_equal("text/javascript", response.content_type)
+    assert_equal("application/json", response.content_type)
     table_list = JSON.parse(response.body)
     header = table_list[0]
     body = table_list[1]
@@ -69,7 +69,7 @@ class HTTPTest < Test::Unit::TestCase
                                 :default_tokenizer => ""))
 
     response = get(command_path(:column_list, :table => "users"))
-    assert_equal("text/javascript", response.content_type)
+    assert_equal("application/json", response.content_type)
     assert_equal([["id", "name", "path", "type", "flags", "domain"]],
                  JSON.parse(response.body).sort)
 
@@ -81,7 +81,7 @@ class HTTPTest < Test::Unit::TestCase
     assert_equal("true", response.body)
 
     response = get(command_path(:column_list, :table => "users"))
-    assert_equal("text/javascript", response.content_type)
+    assert_equal("application/json", response.content_type)
     column_list = JSON.parse(response.body)
     assert_equal(2, column_list.length)
     header = column_list[0]
@@ -110,7 +110,7 @@ class HTTPTest < Test::Unit::TestCase
     assert_equal("1", response.body)
 
     response = get(command_path(:select, :table => "users"))
-    assert_equal("text/javascript", response.content_type)
+    assert_equal("application/json", response.content_type)
     assert_equal([[Result::SUCCESS],
                   [[1],
                    ["_id", "_key", "real_name"],
@@ -176,7 +176,7 @@ class HTTPTest < Test::Unit::TestCase
   private
   def assert_select(expected, parameters)
     response = get(command_path(:select, parameters))
-    assert_equal("text/javascript", response.content_type)
+    assert_equal("application/json", response.content_type)
     assert_equal([[Result::SUCCESS],
                   [[expected.size],
                    ["_id", "_key", "real_name"],

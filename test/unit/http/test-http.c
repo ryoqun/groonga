@@ -73,7 +73,7 @@ test_get_root(void)
   soupcut_client_get(client, "/", NULL);
 
   soupcut_client_assert_response(client);
-  soupcut_client_assert_equal_content_type("text/javascript", client);
+  soupcut_client_assert_equal_content_type("application/json", client);
   soupcut_client_assert_equal_body("", client);
 }
 
@@ -83,7 +83,7 @@ test_get_status(void)
   soupcut_client_get(client, "/d/status", NULL);
 
   soupcut_client_assert_response(client);
-  soupcut_client_assert_equal_content_type("text/javascript", client);
+  soupcut_client_assert_equal_content_type("application/json", client);
   soupcut_client_assert_match_body("{"
                                    "\"alloc_count\":\\d+,"
                                    "\"starttime\":\\d+,"
@@ -102,7 +102,7 @@ test_get_table_list(void)
   soupcut_client_get(client, "/d/table_list", NULL);
 
   soupcut_client_assert_response(client);
-  soupcut_client_assert_equal_content_type("text/javascript", client);
+  soupcut_client_assert_equal_content_type("application/json", client);
   soupcut_client_assert_equal_body(
     "[[\"id\",\"name\",\"path\",\"flags\",\"domain\"]]",
     client);
@@ -122,7 +122,7 @@ test_get_table_list(void)
   grn_test_assert_not_null(&context, users);
 
   soupcut_client_get(client, "/d/table_list", NULL);
-  soupcut_client_assert_equal_content_type("text/javascript", client);
+  soupcut_client_assert_equal_content_type("application/json", client);
   soupcut_client_assert_equal_body(
     cut_take_printf("["
                     "[\"id\",\"name\",\"path\",\"flags\",\"domain\"],"
@@ -154,7 +154,7 @@ test_get_column_list(void)
 
   soupcut_client_get(client, "/d/column_list", "table", table_name, NULL);
   soupcut_client_assert_response(client);
-  soupcut_client_assert_equal_content_type("text/javascript", client);
+  soupcut_client_assert_equal_content_type("application/json", client);
   soupcut_client_assert_equal_body(
     "[[\"id\",\"name\",\"path\",\"type\",\"flags\",\"domain\"]]",
     client);
@@ -167,7 +167,7 @@ test_get_column_list(void)
                      "type", "Int8",
                      NULL);
   soupcut_client_assert_response(client);
-  soupcut_client_assert_equal_content_type("text/javascript", client);
+  soupcut_client_assert_equal_content_type("application/json", client);
   soupcut_client_assert_equal_body("true", client);
 
   age = grn_ctx_get(&context, full_column_name, strlen(full_column_name));
@@ -175,7 +175,7 @@ test_get_column_list(void)
 
   soupcut_client_get(client, "/d/column_list", "table", table_name, NULL);
   soupcut_client_assert_response(client);
-  soupcut_client_assert_equal_content_type("text/javascript", client);
+  soupcut_client_assert_equal_content_type("application/json", client);
   soupcut_client_assert_equal_body(
     cut_take_printf("["
                     "[\"id\",\"name\",\"path\",\"type\",\"flags\",\"domain\"],"
@@ -229,7 +229,7 @@ test_select(void)
                                               column_name, hayamizu_age),
                      NULL);
   soupcut_client_assert_response(client);
-  soupcut_client_assert_equal_content_type("text/javascript", client);
+  soupcut_client_assert_equal_content_type("application/json", client);
   soupcut_client_assert_equal_body(
     cut_take_printf("[[%d],"
                     "[[1],"
