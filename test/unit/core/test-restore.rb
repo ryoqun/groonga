@@ -577,4 +577,17 @@ load --table NonFreePrograms
 ]
 COMMANDS
   end
+
+  def test_bool
+    assert_same_dump(<<COMMANDS)
+table_create Programs 1 ShortText
+column_create Programs free 0 Bool
+load --table Programs
+[
+["_key","free"],
+["Nvidia Video Driver",false],
+["Linux Kernel",true]
+]
+COMMANDS
+  end
 end
