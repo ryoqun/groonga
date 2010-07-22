@@ -615,7 +615,9 @@ grn_expr_close(grn_ctx *ctx, grn_obj *expr)
     grn_obj *obj;
     GRN_PTR_POP(&e->objs, obj);
     if (obj) {
-      grn_obj_unlink(ctx, obj);
+      if (obj->header.type) {
+        grn_obj_unlink(ctx, obj);
+      }
     } else { break; }
   }
   grn_obj_close(ctx, &e->objs);
