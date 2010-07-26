@@ -565,7 +565,9 @@ proc_table_create(grn_ctx *ctx, int nargs, grn_obj **args, grn_user_data *user_d
     if (GRN_TEXT_LEN(VAR(3)) > 0) {
       value_type = grn_ctx_get(ctx, GRN_TEXT_VALUE(VAR(3)),
                                GRN_TEXT_LEN(VAR(3)));
-      if (!value_type) {
+      if (!value_type &&
+          !(GRN_TEXT_LEN(VAR(3)) == 4 &&
+            !memcmp(GRN_TEXT_VALUE(VAR(3)), "Void", 4))) {
         ERR(GRN_INVALID_ARGUMENT,
             "value type doesn't exist: <%.*s>",
             GRN_TEXT_LEN(VAR(3)), GRN_TEXT_VALUE(VAR(3)));
