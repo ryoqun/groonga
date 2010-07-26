@@ -43,7 +43,7 @@ static gchar *env_process_number;
 void
 cut_setup(void)
 {
-  gchar *tmp_dir;
+  const gchar *tmp_dir;
 
   context = g_new0(grn_ctx, 1);
   hash = NULL;
@@ -60,11 +60,10 @@ cut_setup(void)
 
 #undef SAVE_ENV_VALUE
 
-  tmp_dir = g_build_filename(grn_test_get_base_dir(), "tmp", NULL);
+  tmp_dir = grn_test_get_tmp_dir();
   cut_remove_path(tmp_dir, NULL);
 
   base_dir = g_build_filename(tmp_dir, "stress", NULL);
-  g_free(tmp_dir);
 
   g_mkdir_with_parents(base_dir, 0755);
   cut_assert_path_exist(base_dir);

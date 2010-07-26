@@ -38,8 +38,38 @@
 
 typedef struct {
   grn_id lr[2];
+  /*
+    lr[0]: the left node.
+    lr[1]: the right node.
+
+    The left node has 0 at the nth bit at the nth byte.
+    The right node has 1 at the nth bit at the nth byte.
+    'check' value indicate 'at the nth bit at the nth byte'.
+
+    The both available nodes has larger check value rather
+    than the current node.
+
+    The first node (PAT_AT(pat, GRN_ID_NIL, node)) has only
+    the right node and the node is the start point.
+   */
   uint32_t key;
+  /*
+    PAT_IMD(node) == 0: key bytes offset in memory map.
+    PAT_IMD(node) == 1: the key bytes.
+   */
   uint16_t check;
+  /*
+    nth byte: 12, nth bit: 3, terminated: 1
+
+    nth byte is different in key bytes: (check >> 4): max == 4095
+    the left most byte is the 0th byte and the right most byte is the 11th byte.
+
+    nth bit is different in nth byte: ((check >> 1) & 0b111)
+    the left most bit is the 0th bit and the right most bit is the 7th bit.
+
+    terminated: (check & 0b1)
+    terminated == 1: key is terminated.
+   */
   uint16_t bits;
   /* length : 13, deleting : 1, immediate : 1 */
 } pat_node;
@@ -2189,38 +2219,71 @@ grn_pat_check(grn_ctx *ctx, grn_pat *pat)
 }
 
 static void
+grn_pat_inspect_check(grn_ctx *ctx, grn_obj *buf, int check)
+{
+    GRN_TEXT_PUTS(ctx, buf, "{");
+    grn_text_lltoa(ctx, buf, check >> 4);
+    GRN_TEXT_PUTS(ctx, buf, ",");
+    grn_text_lltoa(ctx, buf, (check >> 1) & 7);
+    GRN_TEXT_PUTS(ctx, buf, ",");
+    grn_text_lltoa(ctx, buf, check & 1);
+    GRN_TEXT_PUTS(ctx, buf, "}");
+}
+
+static void
 grn_pat_inspect_node(grn_ctx *ctx, grn_pat *pat, grn_id id, int check,
-                     grn_obj *key_buf, grn_obj *buf)
+                     grn_obj *key_buf, int indent, const char *prefix,
+                     grn_obj *buf)
 {
   pat_node *node = NULL;
-  int key_size;
+  int i, c;
 
-  grn_text_lltoa(ctx, buf, id);
   PAT_AT(pat, id, node);
-  key_size = PAT_LEN(node);
-  if (key_size > 1) {
+  c = PAT_CHK(node);
+
+  for (i = 0; i < indent; i++) {
+    GRN_TEXT_PUTC(ctx, buf, ' ');
+  }
+  GRN_TEXT_PUTS(ctx, buf, prefix);
+  grn_text_lltoa(ctx, buf, id);
+
+  if (c > check) {
+    int key_size;
+    uint8_t *key;
+
+    key_size = PAT_LEN(node);
     GRN_BULK_REWIND(key_buf);
     grn_bulk_space(ctx, key_buf, key_size);
     grn_pat_get_key(ctx, pat, id, GRN_BULK_HEAD(key_buf), key_size);
     GRN_TEXT_PUTS(ctx, buf, "(");
     grn_inspect(ctx, buf, key_buf);
     GRN_TEXT_PUTS(ctx, buf, ")");
-  }
-  GRN_TEXT_PUTS(ctx, buf, "[");
-  if (PAT_CHK(node) > check) {
-    int i;
-    for (i = 0; i < 2; i++) {
-      if (node->lr[i]) {
-        grn_pat_inspect_node(ctx, pat, node->lr[i], PAT_CHK(node), key_buf, buf);
-      } else {
-        GRN_TEXT_PUTS(ctx, buf, "nil");
+
+    grn_pat_inspect_check(ctx, buf, c);
+
+    GRN_TEXT_PUTS(ctx, buf, "[");
+    key = pat_node_get_key(ctx, pat, node);
+    for (i = 0; i < key_size; i++) {
+      int j;
+      uint8_t byte = key[i];
+      if (i != 0) {
+        GRN_TEXT_PUTS(ctx, buf, " ");
       }
-      if (i == 0) {
-        GRN_TEXT_PUTS(ctx, buf, ", ");
+      for (j = 0; j < 8; j++) {
+        grn_text_lltoa(ctx, buf, (byte >> (7 - j)) & 1);
       }
     }
+    GRN_TEXT_PUTS(ctx, buf, "]");
   }
-  GRN_TEXT_PUTS(ctx, buf, "]");
+
+  if (c > check) {
+    GRN_TEXT_PUTS(ctx, buf, "\n");
+    grn_pat_inspect_node(ctx, pat, node->lr[0], c, key_buf,
+                         indent + 2, "L:", buf);
+    GRN_TEXT_PUTS(ctx, buf, "\n");
+    grn_pat_inspect_node(ctx, pat, node->lr[1], c, key_buf,
+                         indent + 2, "R:", buf);
+  }
 }
 
 void
@@ -2229,8 +2292,88 @@ grn_pat_inspect_nodes(grn_ctx *ctx, grn_pat *pat, grn_obj *buf)
   pat_node *node;
   grn_obj key_buf;
 
-  GRN_OBJ_INIT(&key_buf, GRN_BULK, 0, pat->obj.header.domain);
+  GRN_TEXT_PUTS(ctx, buf, "{");
   PAT_AT(pat, GRN_ID_NIL, node);
-  grn_pat_inspect_node(ctx, pat, node->lr[1], -1, &key_buf, buf);
-  GRN_OBJ_FIN(ctx, &key_buf);
+  if (node->lr[1]) {
+    GRN_TEXT_PUTS(ctx, buf, "\n");
+    GRN_OBJ_INIT(&key_buf, GRN_BULK, 0, pat->obj.header.domain);
+    grn_pat_inspect_node(ctx, pat, node->lr[1], -1, &key_buf, 0, "", buf);
+    GRN_OBJ_FIN(ctx, &key_buf);
+    GRN_TEXT_PUTS(ctx, buf, "\n");
+  }
+  GRN_TEXT_PUTS(ctx, buf, "}");
+}
+
+static void
+grn_pat_cursor_inspect_entries(grn_ctx *ctx, grn_pat_cursor *c, grn_obj *buf)
+{
+  int i;
+  GRN_TEXT_PUTS(ctx, buf, "[");
+  for (i = 0; i < c->sp; i++) {
+    grn_pat_cursor_entry *e = c->ss + i;
+    if (i != 0) {
+      GRN_TEXT_PUTS(ctx, buf, ", ");
+    }
+    GRN_TEXT_PUTS(ctx, buf, "[");
+    grn_text_lltoa(ctx, buf, e->id);
+    GRN_TEXT_PUTS(ctx, buf, ",");
+    grn_pat_inspect_check(ctx, buf, e->check);
+    GRN_TEXT_PUTS(ctx, buf, "]");
+  }
+  GRN_TEXT_PUTS(ctx, buf, "]");
+}
+
+void
+grn_pat_cursor_inspect(grn_ctx *ctx, grn_pat_cursor *c, grn_obj *buf)
+{
+  GRN_TEXT_PUTS(ctx, buf, "#<cursor:pat:");
+  grn_inspect_name(ctx, buf, (grn_obj *)(c->pat));
+
+  GRN_TEXT_PUTS(ctx, buf, " ");
+  GRN_TEXT_PUTS(ctx, buf, "current:");
+  grn_text_lltoa(ctx, buf, c->curr_rec);
+
+  GRN_TEXT_PUTS(ctx, buf, " ");
+  GRN_TEXT_PUTS(ctx, buf, "tail:");
+  grn_text_lltoa(ctx, buf, c->tail);
+
+  GRN_TEXT_PUTS(ctx, buf, " ");
+  GRN_TEXT_PUTS(ctx, buf, "flags:");
+  if (c->obj.header.flags & GRN_CURSOR_PREFIX) {
+    GRN_TEXT_PUTS(ctx, buf, "prefix");
+  } else {
+    if (c->obj.header.flags & GRN_CURSOR_DESCENDING) {
+      GRN_TEXT_PUTS(ctx, buf, "descending");
+    } else {
+      GRN_TEXT_PUTS(ctx, buf, "ascending");
+    }
+    GRN_TEXT_PUTS(ctx, buf, "|");
+    if (c->obj.header.flags & GRN_CURSOR_GT) {
+      GRN_TEXT_PUTS(ctx, buf, "greater-than");
+    } else {
+      GRN_TEXT_PUTS(ctx, buf, "greater");
+    }
+    GRN_TEXT_PUTS(ctx, buf, "|");
+    if (c->obj.header.flags & GRN_CURSOR_LT) {
+      GRN_TEXT_PUTS(ctx, buf, "less-than");
+    } else {
+      GRN_TEXT_PUTS(ctx, buf, "less");
+    }
+    if (c->obj.header.flags & GRN_CURSOR_BY_ID) {
+      GRN_TEXT_PUTS(ctx, buf, "|by-id");
+    }
+    if (c->obj.header.flags & GRN_CURSOR_BY_KEY) {
+      GRN_TEXT_PUTS(ctx, buf, "|by-key");
+    }
+  }
+
+  GRN_TEXT_PUTS(ctx, buf, " ");
+  GRN_TEXT_PUTS(ctx, buf, "rest:");
+  grn_text_lltoa(ctx, buf, c->rest);
+
+  GRN_TEXT_PUTS(ctx, buf, " ");
+  GRN_TEXT_PUTS(ctx, buf, "entries:");
+  grn_pat_cursor_inspect_entries(ctx, c, buf);
+
+  GRN_TEXT_PUTS(ctx, buf, ">");
 }

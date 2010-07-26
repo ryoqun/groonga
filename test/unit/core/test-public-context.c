@@ -27,7 +27,7 @@ void test_load(void);
 
 static grn_obj *db;
 static grn_ctx *context;
-static gchar *base_dir;
+static const gchar *base_dir;
 static gchar *default_path;
 static int default_context_flags;
 static grn_encoding default_encoding;
@@ -39,7 +39,7 @@ cut_setup(void)
   db = NULL;
   context = g_new0(grn_ctx, 1);
 
-  base_dir = g_build_filename(grn_test_get_base_dir(), "tmp", NULL);
+  base_dir = grn_test_get_tmp_dir();
   default_path = g_build_filename(base_dir, "db", NULL);
   default_encoding = GRN_ENC_DEFAULT;
   default_context_flags = GRN_CTX_USE_QL;
@@ -68,7 +68,6 @@ cut_teardown(void)
 
   if (base_dir) {
     cut_remove_path(base_dir, NULL);
-    g_free(base_dir);
   }
 
   if (sample_ql_program) {
