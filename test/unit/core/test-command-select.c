@@ -39,6 +39,7 @@ void test_bigram_split_symbol_tokenizer(void);
 void test_nonexistent_table(void);
 void test_boolean(void);
 void test_equal_index(void);
+void test_query_without_match_columns(void);
 
 static gchar *tmp_directory;
 
@@ -500,4 +501,16 @@ test_equal_index(void)
     send_command("select Blogs "
                  "--output_columns _key,title "
                  "--filter 'title == \"groonga 1.0 release!\"'"));
+}
+
+void
+test_query_without_match_columns(void)
+{
+  const gchar *select_command = "select Blogs --query 'foo'";
+  assert_send_command("table_create Blogs TABLE_HASH_KEY ShortText");
+
+  grn_ctx_send(context, select_command, strlen(select_command), 0);
+  grn_test_assert_error(GRN_INVALID_ARGUMENT,
+                        "match_columns must be specified",
+                        context);
 }
