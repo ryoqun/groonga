@@ -39,7 +39,8 @@ void test_bigram_split_symbol_tokenizer(void);
 void test_nonexistent_table(void);
 void test_boolean(void);
 void test_equal_index(void);
-void test_whitespace_only_queries(void);
+void data_whitespace_only_queries(void);
+void test_whitespace_only_queries(gconstpointer data);
 
 static gchar *tmp_directory;
 
@@ -504,9 +505,37 @@ test_equal_index(void)
 }
 
 void
-test_whitespace_only_queries(void)
+data_whitespace_only_queries(void)
 {
-  const char *all_records_result =
+#define ADD_DATUM(label, select_command) \
+   gcut_add_datum(label,                 \
+                  "select_command",      \
+                    G_TYPE_STRING,       \
+                    select_command,      \
+                  NULL)
+
+  ADD_DATUM("no query",
+            "select Blogs");
+  ADD_DATUM("empty query",
+            "select Blogs _key --query ''");
+  ADD_DATUM("single half-width space query",
+            "select Blogs _key --query ' '");
+  ADD_DATUM("single full-width space query",
+            "select Blogs _key --query '　'");
+  ADD_DATUM("multiple half-width space query",
+            "select Blogs _key --query '   '");
+  ADD_DATUM("multiple full-width space query",
+            "select Blogs _key --query '　　　　'");
+  ADD_DATUM("mixed half/full-width space query",
+            "select Blogs _key --query '　　　  　　　　 '");
+#undef ADD_DATUM
+}
+
+void
+test_whitespace_only_queries(gconstpointer data)
+{
+  const gchar *select_command, *actual_result;
+  const gchar *all_records_result =
     "[[[2],"
      "[[\"_id\",\"UInt32\"],"
       "[\"_key\",\"ShortText\"]],"
@@ -519,16 +548,8 @@ test_whitespace_only_queries(void)
                       " [\"groonga-2-0\"]\n"
                       "]");
 
+  select_command = gcut_data_get_string(data, "select_command");
+  actual_result = send_command(select_command);
 
-  cut_assert_equal_string(all_records_result,
-                          send_command("select Blogs"));
-
-  cut_assert_equal_string(all_records_result,
-                          send_command("select Blogs _key --query ''"));
-
-  cut_assert_equal_string(all_records_result,
-                          send_command("select Blogs _key --query ' '"));
-
-  cut_assert_equal_string(all_records_result,
-                          send_command("select Blogs _key --query '　'"));
+  cut_assert_equal_string(all_records_result, actual_result);
 }
