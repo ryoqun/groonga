@@ -39,6 +39,7 @@ void test_bigram_split_symbol_tokenizer(void);
 void test_nonexistent_table(void);
 void test_boolean(void);
 void test_equal_index(void);
+void test_whitespace_only_queries(void);
 
 static gchar *tmp_directory;
 
@@ -500,4 +501,34 @@ test_equal_index(void)
     send_command("select Blogs "
                  "--output_columns _key,title "
                  "--filter 'title == \"groonga 1.0 release!\"'"));
+}
+
+void
+test_whitespace_only_queries(void)
+{
+  const char *no_hit_result =
+    "[[[2],"
+     "[[\"_id\",\"UInt32\"],"
+      "[\"_key\",\"ShortText\"]],"
+      "[1,\"groonga-1-0\"],[2,\"groonga-2-0\"]]]";
+
+  assert_send_command("table_create Blogs TABLE_HASH_KEY ShortText");
+  assert_send_command("load --table Blogs --columns '_key'\n"
+                      "[\n"
+                      " [\"groonga-1-0\"],\n"
+                      " [\"groonga-2-0\"]\n"
+                      "]");
+
+
+  cut_assert_equal_string(no_hit_result,
+                          send_command("select Blogs"));
+
+  cut_assert_equal_string(no_hit_result,
+                          send_command("select Blogs _key --query ''"));
+
+  cut_assert_equal_string(no_hit_result,
+                          send_command("select Blogs _key --query ' '"));
+
+  cut_assert_equal_string(no_hit_result,
+                          send_command("select Blogs _key --query '　'"));
 }
