@@ -506,7 +506,7 @@ test_equal_index(void)
 void
 test_whitespace_only_queries(void)
 {
-  const char *no_hit_result =
+  const char *all_records_result =
     "[[[2],"
      "[[\"_id\",\"UInt32\"],"
       "[\"_key\",\"ShortText\"]],"
@@ -520,15 +520,15 @@ test_whitespace_only_queries(void)
                       "]");
 
 
-  cut_assert_equal_string(no_hit_result,
+  cut_assert_equal_string(all_records_result,
                           send_command("select Blogs"));
 
-  cut_assert_equal_string(no_hit_result,
+  cut_assert_equal_string(all_records_result,
                           send_command("select Blogs _key --query ''"));
 
-  cut_assert_equal_string(no_hit_result,
+  cut_assert_equal_string(all_records_result,
                           send_command("select Blogs _key --query ' '"));
 
-  cut_assert_equal_string(no_hit_result,
+  cut_assert_equal_string(all_records_result,
                           send_command("select Blogs _key --query '　'"));
 }
