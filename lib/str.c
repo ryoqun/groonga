@@ -2714,7 +2714,7 @@ grn_text_otoj(grn_ctx *ctx, grn_obj *bulk, grn_obj *obj, grn_obj_format *format)
         grn_id id = *((grn_id *)GRN_BULK_HEAD(obj));
         if (table && table->header.type != GRN_TABLE_NO_KEY) {
           /* todo : temporal patch. grn_table_at() is kinda costful... */
-          if (grn_table_at(ctx, table, id)) {
+          if (id && grn_table_at(ctx, table, id)) {
             grn_obj *accessor = grn_obj_column(ctx, table, "_key", 4);
             if (accessor) {
               grn_obj_get_value(ctx, accessor, id, &buf);
