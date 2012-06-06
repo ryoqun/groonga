@@ -708,18 +708,10 @@ s_output(grn_ctx *ctx, int flags, void *arg)
     grn_obj *command;
     if (GRN_TEXT_LEN(buf) || ctx->rc) {
       FILE * stream = (FILE *) arg;
-      grn_obj head, foot;
-      GRN_TEXT_INIT(&head, 0);
-      GRN_TEXT_INIT(&foot, 0);
-      print_return_code(ctx, ctx->rc, &head, buf, &foot);
-      fwrite(GRN_TEXT_VALUE(&head), 1, GRN_TEXT_LEN(&head), stream);
       fwrite(GRN_TEXT_VALUE(buf), 1, GRN_TEXT_LEN(buf), stream);
-      fwrite(GRN_TEXT_VALUE(&foot), 1, GRN_TEXT_LEN(&foot), stream);
       fputc('\n', stream);
       fflush(stream);
       GRN_BULK_REWIND(buf);
-      GRN_OBJ_FIN(ctx, &head);
-      GRN_OBJ_FIN(ctx, &foot);
     }
     command = GRN_CTX_USER_DATA(ctx)->ptr;
     GRN_BULK_REWIND(command);
@@ -780,20 +772,13 @@ c_output(grn_ctx *ctx)
     }
     */
     if (str_len || ctx->rc) {
-      grn_obj head, body, foot;
-      GRN_TEXT_INIT(&head, 0);
+      grn_obj body;
       GRN_TEXT_INIT(&body, GRN_OBJ_DO_SHALLOW_COPY);
-      GRN_TEXT_INIT(&foot, 0);
       GRN_TEXT_SET(ctx, &body, str, str_len);
-      print_return_code(ctx, ctx->rc, &head, &body, &foot);
-      fwrite(GRN_TEXT_VALUE(&head), 1, GRN_TEXT_LEN(&head), output);
       fwrite(GRN_TEXT_VALUE(&body), 1, GRN_TEXT_LEN(&body), output);
-      fwrite(GRN_TEXT_VALUE(&foot), 1, GRN_TEXT_LEN(&foot), output);
       fputc('\n', output);
       fflush(output);
-      GRN_OBJ_FIN(ctx, &head);
       GRN_OBJ_FIN(ctx, &body);
-      GRN_OBJ_FIN(ctx, &foot);
     }
   } while ((flags & GRN_CTX_MORE));
   return 0;
@@ -1000,10 +985,8 @@ h_output(grn_ctx *ctx, int flags, void *arg)
   grn_sock fd = hc->msg->u.fd;
   grn_obj *body = &hc->body;
   const char *mime_type = ctx->impl->mime_type;
-  grn_obj head, foot, *outbuf = ctx->impl->outbuf;
+  grn_obj *outbuf = ctx->impl->outbuf;
   if (!(flags & GRN_CTX_TAIL)) { return; }
-  GRN_TEXT_INIT(&head, 0);
-  GRN_TEXT_INIT(&foot, 0);
   if (!expr_rc) {
     grn_obj *expr = ctx->impl->curr_expr;
     grn_obj *jsonp_func = NULL;
@@ -1011,25 +994,15 @@ h_output(grn_ctx *ctx, int flags, void *arg)
       jsonp_func = grn_expr_get_var(ctx, expr, JSON_CALLBACK_PARAM,
                                     strlen(JSON_CALLBACK_PARAM));
     }
-    if (jsonp_func && GRN_TEXT_LEN(jsonp_func)) {
-      GRN_TEXT_PUT(ctx, &head, GRN_TEXT_VALUE(jsonp_func), GRN_TEXT_LEN(jsonp_func));
-      GRN_TEXT_PUTC(ctx, &head, '(');
-      print_return_code(ctx, expr_rc, &head, outbuf, &foot);
-      GRN_TEXT_PUTS(ctx, &foot, ");");
-    } else {
-      print_return_code(ctx, expr_rc, &head, outbuf, &foot);
-    }
     GRN_TEXT_SETS(ctx, body, "HTTP/1.1 200 OK\r\n");
     GRN_TEXT_PUTS(ctx, body, "Connection: close\r\n");
     GRN_TEXT_PUTS(ctx, body, "Content-Type: ");
     GRN_TEXT_PUTS(ctx, body, mime_type);
     GRN_TEXT_PUTS(ctx, body, "\r\nContent-Length: ");
-    grn_text_lltoa(ctx, body,
-                   GRN_TEXT_LEN(&head) + GRN_TEXT_LEN(outbuf) + GRN_TEXT_LEN(&foot));
+    grn_text_lltoa(ctx, body, GRN_TEXT_LEN(outbuf));
     GRN_TEXT_PUTS(ctx, body, "\r\n\r\n");
   } else {
     GRN_BULK_REWIND(outbuf);
-    print_return_code(ctx, expr_rc, &head, outbuf, &foot);
     if (expr_rc == GRN_NO_SUCH_FILE_OR_DIRECTORY) {
       GRN_TEXT_SETS(ctx, body, "HTTP/1.1 404 Not Found\r\n");
     } else {
@@ -1055,29 +1028,24 @@ h_output(grn_ctx *ctx, int flags, void *arg)
       SERR("WSASend");
     }
 #else /* WIN32 */
-    struct iovec msg_iov[4];
+    struct iovec msg_iov[2];
     struct msghdr msg;
     msg.msg_name = NULL;
     msg.msg_namelen = 0;
     msg.msg_iov = msg_iov;
-    msg.msg_iovlen = 4;
+    msg.msg_iovlen = 2;
     msg.msg_control = NULL;
     msg.msg_controllen = 0;
     msg.msg_flags = 0;
     msg_iov[0].iov_base = GRN_TEXT_VALUE(body);
     msg_iov[0].iov_len = GRN_TEXT_LEN(body);
-    msg_iov[1].iov_base = GRN_TEXT_VALUE(&head);
-    msg_iov[1].iov_len = GRN_TEXT_LEN(&head);
-    msg_iov[2].iov_base = GRN_TEXT_VALUE(outbuf);
-    msg_iov[2].iov_len = GRN_TEXT_LEN(outbuf);
-    msg_iov[3].iov_base = GRN_TEXT_VALUE(&foot);
-    msg_iov[3].iov_len = GRN_TEXT_LEN(&foot);
+    msg_iov[1].iov_base = GRN_TEXT_VALUE(outbuf);
+    msg_iov[1].iov_len = GRN_TEXT_LEN(outbuf);
     if ((ret = sendmsg(fd, &msg, MSG_NOSIGNAL)) == -1) {
       SERR("sendmsg");
     }
 #endif /* WIN32 */
-    len = GRN_TEXT_LEN(body) + GRN_TEXT_LEN(&head) +
-      GRN_TEXT_LEN(outbuf) + GRN_TEXT_LEN(&foot);
+    len = GRN_TEXT_LEN(body) + GRN_TEXT_LEN(outbuf);
     if (ret != len) {
       GRN_LOG(&grn_gctx, GRN_LOG_NOTICE,
               "couldn't send all data (%" GRN_FMT_LLD "/%" GRN_FMT_LLD ")",
@@ -1086,8 +1054,6 @@ h_output(grn_ctx *ctx, int flags, void *arg)
   }
   GRN_BULK_REWIND(body);
   GRN_BULK_REWIND(outbuf);
-  GRN_OBJ_FIN(ctx, &foot);
-  GRN_OBJ_FIN(ctx, &head);
 }
 
 static void
