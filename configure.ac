@@ -1155,6 +1155,8 @@ AC_ARG_WITH(groonga-github-com-path,
             [GROONGA_GITHUB_COM_PATH=""])
 AC_SUBST(GROONGA_GITHUB_COM_PATH)
 
+AC_CONFIG_SUBDIRS([vendor/nginx])
+
 # For package
 AC_ARG_WITH(rsync-path,
             [AS_HELP_STRING([--with-rsync-path=PATH],
