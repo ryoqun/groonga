@@ -1192,6 +1192,7 @@ AC_OUTPUT([
   packages/rpm/fedora/groonga.spec
   packages/apt/debian/groonga-keyring.postrm
   groonga.pc
+  groonga-httpd-conf.sh
   ])
 
 echo "$PACKAGE_NAME $PACKAGE_VERSION configuration:"
