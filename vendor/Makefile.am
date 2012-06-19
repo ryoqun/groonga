@@ -5,5 +5,5 @@
 all-local:
 	(cd nginx-1.2.1 && $(MAKE) build)
 
-install:
+install-exec-local:
 	(cd nginx-1.2.1 && $(MAKE) install)
