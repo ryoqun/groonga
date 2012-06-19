@@ -43,9 +43,3 @@ nodist_EXTRA_groonga_benchmark_SOURCES = $(NONEXISTENT_CXX_SOURCE)
 groonga_benchmark_LDADD =			\
 	$(top_builddir)/lib/libgroonga.la	\
 	$(MESSAGE_PACK_LIBS)
-
-all:
-	$(MAKE) $(AM_MAKEFLAGS) -C $(top_builddir)/vendor/nginx-1.2.1
-
-install:
-	$(MAKE) $(AM_MAKEFLAGS) -C $(top_builddir)/vendor/nginx-1.2.1 install

@@ -274,6 +274,7 @@ AC_CONFIG_FILES([
   test/benchmark/fixtures/Makefile
   test/benchmark/fixtures/geo-select/Makefile
   test/benchmark/lib/Makefile
+  vendor/Makefile
 ])
 
 if test "$GCC" = "yes"; then
