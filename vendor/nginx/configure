@@ -10,4 +10,5 @@ source "${top_dir}/groonga-httpd-conf.sh"
 cd ../nginx-1.2.1/
 
 ./configure \
+  --prefix="${GROONGA_HTTPD_PREFIX}" \
   --add-module="${GROONGA_HTTPD_MODULE_PATH}"

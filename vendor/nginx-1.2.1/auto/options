@@ -302,11 +302,6 @@ use the \"--without-http_limit_conn_module\" option instead"
         --test-build-epoll)              NGX_TEST_BUILD_EPOLL=YES   ;;
         --test-build-rtsig)              NGX_TEST_BUILD_RTSIG=YES   ;;
         --test-build-solaris-sendfilev)  NGX_TEST_BUILD_SOLARIS_SENDFILEV=YES ;;
-        --disable-option-checking)       true;;
-        --cache-file=*)                  true;;
-        --srcdir=*)                      true;;
-        CFLAGS=*)                        true;;
-        CXXFLAGS=*)                      true;;
 
         *)
             echo "$0: error: invalid option \"$option\""
