@@ -1155,7 +1155,15 @@ AC_ARG_WITH(groonga-github-com-path,
             [GROONGA_GITHUB_COM_PATH=""])
 AC_SUBST(GROONGA_GITHUB_COM_PATH)
 
-AC_CONFIG_SUBDIRS([vendor/nginx])
+# nginx
+AC_ARG_ENABLE(nginx,
+  [AS_HELP_STRING([--enable-nginx],
+    [enable nginx used for groonga-httpd. [default=yes]])],
+  [enable_nginx="$enableval"],
+  [enable_nginx="auto"])
+if test "x$enable_nginx" != "xno"; then
+  AC_CONFIG_SUBDIRS([vendor/nginx])
+fi
 
 # For package
 AC_ARG_WITH(rsync-path,
