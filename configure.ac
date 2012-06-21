@@ -1177,7 +1177,7 @@ AC_SUBST(RSYNC_PATH)
 GPG_UID=m4_include(gpg_uid)
 AC_SUBST(GPG_UID)
 
-pkgsysconfdir="\$(sysconfdir)/$PACKAGE_NAME"
+pkgsysconfdir="\${sysconfdir}/$PACKAGE_NAME"
 AC_SUBST(pkgsysconfdir)
 
 GRN_CONFIG_PATH="`
