@@ -10,7 +10,7 @@ SUBDIRS =					\
 	lib					\
 	plugins					\
 	src					\
-	vendor                                  \
+	vendor					\
 	examples				\
 	test					\
 	packages				\
