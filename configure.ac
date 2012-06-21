@@ -1125,7 +1125,7 @@ AC_SUBST(examples_dictionarydir)
 
 # for document root
 GRN_DEFAULT_DOCUMENT_ROOT_BASE="html/admin"
-GRN_DEFAULT_DOCUMENT_ROOT="\$(pkgdatadir)/\$(GRN_DEFAULT_DOCUMENT_ROOT_BASE)"
+GRN_DEFAULT_DOCUMENT_ROOT="\${pkgdatadir}/\${GRN_DEFAULT_DOCUMENT_ROOT_BASE}"
 GRN_EXPANDED_DEFAULT_DOCUMENT_ROOT="\${datadir}/${PACKAGE}/${GRN_DEFAULT_DOCUMENT_ROOT_BASE}"
 GRN_DEFAULT_RELATIVE_DOCUMENT_ROOT="share/\$(PACKAGE)/\$(GRN_DEFAULT_DOCUMENT_ROOT_BASE)"
 AC_SUBST(GRN_DEFAULT_DOCUMENT_ROOT_BASE)
@@ -1187,12 +1187,19 @@ GRN_CONFIG_PATH="`
 AC_DEFINE_UNQUOTED(GRN_CONFIG_PATH, ["$GRN_CONFIG_PATH"],
   [Default command line option configuration file.])
 
+GROONGA_HTTPD_DOCUMENT_ROOT="`
+  test \"$prefix\" = NONE && prefix=
+  eval eval eval echo ${GRN_EXPANDED_DEFAULT_DOCUMENT_ROOT}
+`"
+AC_SUBST(GROONGA_HTTPD_DOCUMENT_ROOT)
+
 AC_OUTPUT([
   packages/rpm/centos/groonga.spec
   packages/rpm/fedora/groonga.spec
   packages/apt/debian/groonga-keyring.postrm
   groonga.pc
   groonga-httpd-conf.sh
+  data/groonga-httpd.conf
   ])
 
 echo "$PACKAGE_NAME $PACKAGE_VERSION configuration:"
