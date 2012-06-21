@@ -1188,7 +1188,7 @@ AC_DEFINE_UNQUOTED(GRN_CONFIG_PATH, ["$GRN_CONFIG_PATH"],
   [Default command line option configuration file.])
 
 GROONGA_HTTPD_DOCUMENT_ROOT="`
-  test \"$prefix\" = NONE && prefix=
+  test \"$prefix\" = NONE && prefix=/usr/local
   eval eval eval echo ${GRN_EXPANDED_DEFAULT_DOCUMENT_ROOT}
 `"
 AC_SUBST(GROONGA_HTTPD_DOCUMENT_ROOT)
